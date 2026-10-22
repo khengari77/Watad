@@ -1,0 +1,11 @@
+[package]
+name = "watad-qasida"
+description = "Exact poem inference with shared meter, binding classes and witnessed obligations."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+watad-types = { path = "../types" }
+watad-lugha = { path = "../lugha" }
+watad-checker = { path = "../checker" }

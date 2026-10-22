@@ -1,0 +1,11 @@
+[package]
+name = "watad-matcher"
+description = "Exact profile-driven meter recognition with checked derivation certificates."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+watad-types = { path = "../types" }
+watad-lugha = { path = "../lugha" }
+watad-checker = { path = "../checker" }

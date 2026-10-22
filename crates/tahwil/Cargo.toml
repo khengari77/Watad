@@ -1,0 +1,11 @@
+[package]
+name = "watad-tahwil"
+description = "Zihafat, 'ilal, jaz', khurm as typed operations, plus source-tagged attestation tables."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+watad-types = { path = "../types" }
+watad-checker = { path = "../checker" }
+thiserror = "2"

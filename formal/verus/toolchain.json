@@ -1,0 +1,9 @@
+{
+  "version": "0.2026.10.04.426d8b0",
+  "commit": "426d8b01e7ffb910a36c15e1f870ff985bb61eef",
+  "rust": "1.98.1",
+  "linux_x86_64": {
+    "url": "https://github.com/verus-lang/verus/releases/download/release/0.2026.10.04.426d8b0/verus-0.2026.10.04.426d8b0-x86-linux.zip",
+    "sha256": "624018662868563a7bec0dd07be5e4dd0c3d61124b4b55105765884bf2d4d1a0"
+  }
+}

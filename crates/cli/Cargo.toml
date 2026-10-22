@@ -1,0 +1,16 @@
+[package]
+name = "watad-cli"
+description = "Beat-level meter recognition, derivation display and poem checking."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "watad"
+path = "src/main.rs"
+
+[dependencies]
+watad-types = { path = "../types" }
+watad-matcher = { path = "../matcher" }
+watad-lugha = { path = "../lugha" }
+watad-qasida = { path = "../qasida" }

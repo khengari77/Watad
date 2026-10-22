@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+env:
+  CARGO_TERM_COLOR: always
+  PROPTEST_CASES: "512"
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: "1.92.0"
+          components: rustfmt, clippy
+      - name: Format
+        run: cargo fmt --all -- --check
+      - name: Clippy
+        run: cargo clippy --workspace --all-targets --locked -- -D warnings
+      - name: Docs
+        run: cargo doc --workspace --no-deps --locked
+        env:
+          RUSTDOCFLAGS: -D warnings
+      - name: Doctests
+        run: cargo test --workspace --doc --locked
+      - name: Test
+        run: cargo test --workspace --locked
+
+  verus-proof:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: "1.92.0"
+      - name: Fetch workspace test dependencies
+        run: cargo fetch --locked
+      - name: Install pinned Verus and its Rust toolchain
+        run: |
+          rustup toolchain install 1.98.1 --profile minimal --no-self-update
+          curl -fL --retry 3 -o "$RUNNER_TEMP/verus.zip" https://github.com/verus-lang/verus/releases/download/release/0.2026.10.04.426d8b0/verus-0.2026.10.04.426d8b0-x86-linux.zip
+          printf '%s  %s\n' 624018662868563a7bec0dd07be5e4dd0c3d61124b4b55105765884bf2d4d1a0 "$RUNNER_TEMP/verus.zip" | sha256sum -c -
+          unzip -q "$RUNNER_TEMP/verus.zip" -d "$RUNNER_TEMP/verus"
+      - name: Verify shared types and checker, compile, test integration, and reject changed rules
+        run: python3 -u formal/check-verus.py --verus "$RUNNER_TEMP/verus/verus-x86-linux/verus" --negative-control

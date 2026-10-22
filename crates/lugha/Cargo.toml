@@ -1,0 +1,16 @@
+[package]
+name = "watad-lugha"
+description = "Source-tagged, circle-bound meter profiles with exact recognition and checked certificates."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+watad-checker = { path = "../checker" }
+watad-types = { path = "../types" }
+watad-daira = { path = "../daira" }
+watad-tahwil = { path = "../tahwil" }
+thiserror = "2"
+
+[dev-dependencies]
+proptest = { version = "1.11", default-features = false, features = ["std"] }

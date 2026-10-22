@@ -1,0 +1,13 @@
+[package]
+name = "watad-checker"
+description = "Verus-checked structural transformations, exact meter recognition and poem certificates."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+watad-types = { path = "../types" }
+verus_builtin_macros = "=0.0.0-2026-09-20-0158"
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(verus_keep_ghost)'] }

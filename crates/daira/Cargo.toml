@@ -1,0 +1,13 @@
+[package]
+name = "watad-daira"
+description = "Al-Khalil's five circles and rotation-based meter derivation (const-asserted theorems)."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+verus_builtin_macros = "=0.0.0-2026-09-20-0158"
+watad-types = { path = "../types" }
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(verus_keep_ghost)'] }
