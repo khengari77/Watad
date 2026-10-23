@@ -93,6 +93,7 @@ Allocation failure and process resource limits remain environmental limits.
 - [Profile coverage and source conventions](spec/profiles/classical-v1.md)
 - [Types and structural identity](docs/TYPES.md)
 - [Proof scope and reproduction](formal/README.md)
+- [Mathematical specifications and proof explanations](docs/proofs.md)
 
 ## Build and check
 
