@@ -18,7 +18,7 @@ verus! {
 
 /// A source form in raw recipe coordinates. This is the common data boundary
 /// shared by the catalog adapter and the verified expansion core.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 #[verifier::allow(autoderive_clone_without_spec)]
 pub struct Form {
     pub constraints: Vec<Rule>,

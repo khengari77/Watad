@@ -96,6 +96,35 @@ fn wafir_requires_a_witness_of_the_unaltered_shortened_arud() {
         ajuz: &a,
     };
     assert!(p.recognize_poem(&[input]).unwrap().is_none());
+    let input = Input {
+        context: 0,
+        sadr: &s,
+        ajuz: &a,
+    };
+    assert!(
+        p.recognize_poem(&[
+            input,
+            Input {
+                context: 0,
+                sadr: &s,
+                ajuz: &a,
+            }
+        ])
+        .unwrap()
+        .is_none()
+    );
+    let f = &p.kernel().forms[2];
+    let s_alt_darb: Vec<_> = f.sadr.iter().flat_map(|s| s.words[0].clone()).collect();
+    let a_alt_darb: Vec<_> = f.ajuz.iter().flat_map(|s| s.words[0].clone()).collect();
+    assert!(
+        p.recognize_poem(&[Input {
+            context: 0,
+            sadr: &s_alt_darb,
+            ajuz: &a_alt_darb,
+        }])
+        .unwrap()
+        .is_some()
+    );
     let f = &p.kernel().forms[1];
     let good_s: Vec<_> = f.sadr.iter().flat_map(|s| s.words[0].clone()).collect();
     let input = [

@@ -166,16 +166,6 @@ fn map_catalog_error(error: watad_checker::catalog::Error) -> meter::Error {
     }
 }
 
-fn same_form(a: &Form, b: &Form) -> bool {
-    a.feet == b.feet
-        && a.context == b.context
-        && a.initial_only == b.initial_only
-        && a.class == b.class
-        && a.constraints == b.constraints
-        && a.sadr == b.sadr
-        && a.ajuz == b.ajuz
-}
-
 /// Remove only rows identical in every semantic field and in requirement-group
 /// membership, keeping the first source coordinate. A duplicate that belongs to
 /// a different witness group is not interchangeable even when its recipes match.
@@ -195,7 +185,7 @@ fn remove_exact_duplicates(
     let mut old_to_new = Vec::with_capacity(forms.len());
     for (index, form) in forms.into_iter().enumerate() {
         match unique.iter().position(|(kept, kept_membership)| {
-            same_form(kept, &form) && kept_membership == &membership[index]
+            kept == &form && kept_membership == &membership[index]
         }) {
             Some(index) => old_to_new.push(index),
             None => {

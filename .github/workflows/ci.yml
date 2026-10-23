@@ -29,6 +29,8 @@ jobs:
         run: cargo test --workspace --doc --locked
       - name: Test
         run: cargo test --workspace --locked
+      - name: Classifier regression tests
+        run: PYTHONDONTWRITEBYTECODE=1 python3 formal/test_check_verus.py
 
   verus-proof:
     runs-on: ubuntu-24.04

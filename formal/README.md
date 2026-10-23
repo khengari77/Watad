@@ -23,6 +23,7 @@ Install the pinned verifier and its Rust toolchain, and fetch workspace
 packages with `cargo fetch --locked`. Then run:
 
 ```sh
+PYTHONDONTWRITEBYTECODE=1 python3 formal/test_check_verus.py
 python3 -u formal/check-verus.py --verus /absolute/path/to/verus --negative-control
 ```
 
@@ -66,10 +67,11 @@ proof-obligation rejection. Controls cover authority, alphabet/input bounds,
 ownership, adjacency, compiler completeness, circle/base provenance,
 normalization coordinates/preconditions/suffixes, alternative ordering and
 coverage, metadata copying, requirement validity and empty-source output.
-Compilation failure and timeout do not count as proof rejection. The driver
-recognizes general proof-failure diagnostics; it does not automatically match
-each control to a particular named obligation. Inspect the printed diagnostics
-to confirm that the intended postcondition or invariant failed.
+Each control declares the expected proof-error kind, source file and obligation
+text. The driver matches these within an actual error block from that control's
+mutated copy and requires a failed verification summary. Compilation failures,
+timeouts and warnings do not count as proof rejection. Classifier regression
+tests cover intended and unrelated diagnostics.
 
 Selected-choice controls cover recognition completeness, source-rule flag
 compilation, and independently bypassing the executable sadr/ajuz replay
