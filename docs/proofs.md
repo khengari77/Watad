@@ -280,9 +280,10 @@ suffix exactly:
 \begin{cases}
 \bot & i<0 \lor i>|feet| \lor at<0 \lor at>|input|,\\
 at=|input| & i=|feet|,\\
-\mathsf{prefix}(input,at,feet[i].word\_spec)
-\land
-\mathsf{tiling}(input,feet,i+1,at+|feet[i].word\_spec|)
+\begin{aligned}
+&\mathsf{prefix}(input,at,feet[i].word\_spec)\\
+&\land\mathsf{tiling}(input,feet,i+1,at+|feet[i].word\_spec|)
+\end{aligned}
 & i<|feet|.
 \end{cases}
 ```
@@ -307,12 +308,12 @@ For a slot sequence $`S`$ and feet $`F`$,
 ```
 
 ```math
-\mathsf{basisBound}(P,F)
-\iff
-\forall i<|P.\mathit{forms}|:\;
-\mathsf{halfBound}(P.\mathit{forms}[i].\mathit{sadr},F)
-\land
-\mathsf{halfBound}(P.\mathit{forms}[i].\mathit{ajuz},F).
+\begin{aligned}
+&\mathsf{basisBound}(P,F)\\
+&\iff\forall i<|P.\mathit{forms}|:\;\\
+&\quad\mathsf{halfBound}(P.\mathit{forms}[i].\mathit{sadr},F)\\
+&\quad\land\mathsf{halfBound}(P.\mathit{forms}[i].\mathit{ajuz},F).
+\end{aligned}
 ```
 
 `check_half` and `check_basis` return exactly these predicates. The binding is
@@ -388,12 +389,12 @@ A source program `p` has a sequence of actions, one per original letter. The
 primitive compatibility relation is
 
 ```math
-\mathsf{compatible}(p,q,l,r)
-\iff
-l<|p.\mathit{actions}| \;\land\; r<|q.\mathit{actions}|
-\;\land\;
-\neg\bigl(p.\mathit{actions}[l]=\mathsf{Delete}
+\begin{aligned}
+&\mathsf{compatible}(p,q,l,r)\\
+&\iff l<|p.\mathit{actions}|\;\land\;r<|q.\mathit{actions}|\\
+&\quad\;\land\;\neg\bigl(p.\mathit{actions}[l]=\mathsf{Delete}
 \land q.\mathit{actions}[r]=\mathsf{Delete}\bigr).
+\end{aligned}
 ```
 
 This is deliberately directional. It says only that the named deletion in the
@@ -404,26 +405,28 @@ A rule is `Rule { left, right, left_letter, right_letter }`. Its scope condition
 is
 
 ```math
-\mathsf{ruleScopeOk}(H,R)
-\iff
-R.\mathit{left}<|H| \land R.\mathit{right}<|H|
-\land \bigl(\forall i<|H[R.\mathit{left}].\mathit{programs}|:\;
-  R.\mathit{leftLetter}<|H[R.\mathit{left}].\mathit{programs}[i].\mathit{actions}|\bigr)
-\land \bigl(\forall j<|H[R.\mathit{right}].\mathit{programs}|:\;
-  R.\mathit{rightLetter}<|H[R.\mathit{right}].\mathit{programs}[j].\mathit{actions}|\bigr).
+\begin{aligned}
+&\mathsf{ruleScopeOk}(H,R)\\
+&\iff R.\mathit{left}<|H|\land R.\mathit{right}<|H|\\
+&\land\bigl(\forall i<|H[R.\mathit{left}].\mathit{programs}|:\;\\
+&\quad R.\mathit{leftLetter}<|H[R.\mathit{left}].\mathit{programs}[i].\mathit{actions}|\bigr)\\
+&\land\bigl(\forall j<|H[R.\mathit{right}].\mathit{programs}|:\;\\
+&\quad R.\mathit{rightLetter}<|H[R.\mathit{right}].\mathit{programs}[j].\mathit{actions}|\bigr).
+\end{aligned}
 ```
 
 The all-pairs source predicate is
 
 ```math
-\mathsf{validRule}(H,R)
-\iff
-\mathsf{ruleScopeOk}(H,R)
-\land \forall i<|H[R.\mathit{left}].\mathit{programs}|:\;
-\forall j<|H[R.\mathit{right}].\mathit{programs}|:\;
-\mathsf{compatible}\bigl(H[R.\mathit{left}].\mathit{programs}[i],
-H[R.\mathit{right}].\mathit{programs}[j],
+\begin{aligned}
+&\mathsf{validRule}(H,R)\\
+&\iff\mathsf{ruleScopeOk}(H,R)\\
+&\land\forall i<|H[R.\mathit{left}].\mathit{programs}|:\;\\
+&\quad\forall j<|H[R.\mathit{right}].\mathit{programs}|:\;\\
+&\quad\mathsf{compatible}\bigl(H[R.\mathit{left}].\mathit{programs}[i],\\
+&\qquad H[R.\mathit{right}].\mathit{programs}[j],
 R.\mathit{leftLetter},R.\mathit{rightLetter}\bigr).
+\end{aligned}
 ```
 
 `adjacency::valid` is the conjunction of `validRule` over a rule list. This is
@@ -448,15 +451,15 @@ an original-letter index `letter`, the compact flag vector is
 A compact rule stores the two flag vectors. The compiled correspondence is
 
 ```math
-\mathsf{compiledRule}(H,R,C)
-\iff
-R.\mathit{left}<|H|\land R.\mathit{right}<|H|
-\land C.\mathit{left}=R.\mathit{left}
-\land C.\mathit{right}=R.\mathit{right}
-\land C.\mathit{leftDeleted}
-=\mathsf{deletionFlags}(H[R.\mathit{left}].\mathit{programs},R.\mathit{leftLetter})
-\land C.\mathit{rightDeleted}
-=\mathsf{deletionFlags}(H[R.\mathit{right}].\mathit{programs},R.\mathit{rightLetter}).
+\begin{aligned}
+&\mathsf{compiledRule}(H,R,C)\\
+&\iff R.\mathit{left}<|H|\land R.\mathit{right}<|H|\\
+&\land C.\mathit{left}=R.\mathit{left}\land C.\mathit{right}=R.\mathit{right}\\
+&\land C.\mathit{leftDeleted}\\
+&\quad=\mathsf{deletionFlags}(H[R.\mathit{left}].\mathit{programs},R.\mathit{leftLetter})\\
+&\land C.\mathit{rightDeleted}\\
+&\quad=\mathsf{deletionFlags}(H[R.\mathit{right}].\mathit{programs},R.\mathit{rightLetter}).
+\end{aligned}
 ```
 
 `structured::compiled_rules` additionally requires the source and compact rule
@@ -475,18 +478,14 @@ surface word. Two alternatives with the same beat word remain distinct.
 A selected step sequence `steps` satisfies one compact rule exactly when
 
 ```math
-\mathsf{permitsRule}(C,\mathit{steps})
-\iff
-C.\mathit{left}<|\mathit{steps}|
-\land C.\mathit{right}<|\mathit{steps}|
-\land \mathit{steps}[C.\mathit{left}].\mathit{choice}<|C.\mathit{leftDeleted}|
-\land \mathit{steps}[C.\mathit{right}].\mathit{choice}<|C.\mathit{rightDeleted}|
-\land
-\neg\bigl(
-C.\mathit{leftDeleted}[\mathit{steps}[C.\mathit{left}].\mathit{choice}]
-\land
-C.\mathit{rightDeleted}[\mathit{steps}[C.\mathit{right}].\mathit{choice}]
-\bigr).
+\begin{aligned}
+&\mathsf{permitsRule}(C,\mathit{steps})\\
+&\iff C.\mathit{left}<|\mathit{steps}|\land C.\mathit{right}<|\mathit{steps}|\\
+&\land\mathit{steps}[C.\mathit{left}].\mathit{choice}<|C.\mathit{leftDeleted}|\\
+&\land\mathit{steps}[C.\mathit{right}].\mathit{choice}<|C.\mathit{rightDeleted}|\\
+&\land\neg\bigl(C.\mathit{leftDeleted}[\mathit{steps}[C.\mathit{left}].\mathit{choice}]\\
+&\quad\land C.\mathit{rightDeleted}[\mathit{steps}[C.\mathit{right}].\mathit{choice}]\bigr).
+\end{aligned}
 ```
 
 `choice::permits` conjoins this over all rules. This is the selected-path
@@ -554,12 +553,12 @@ their finite cases; they do not replace a general theorem.
 The named normalizer is separate from the compact language. Its key contract is
 
 ```math
-\mathsf{normalizeSpec}(\mathit{base},\mathit{changes})
-=\mathsf{Ok}(\mathsf{programView}(p))
-\land
-\mathsf{eligible}(p,\mathit{position})
-\Longrightarrow
-\mathsf{valid}(\mathit{base}.\mathit{word},p,\mathit{position}).
+\begin{aligned}
+&\mathsf{normalizeSpec}(\mathit{base},\mathit{changes})
+=\mathsf{Ok}(\mathsf{programView}(p))\\
+&\land\mathsf{eligible}(p,\mathit{position})\\
+&\Longrightarrow\mathsf{valid}(\mathit{base}.\mathit{word},p,\mathit{position}).
+\end{aligned}
 ```
 
 The executable normalizer constructs simultaneous actions in **original
@@ -666,8 +665,9 @@ A scope is `(context, initial)`. A certificate is legal for a profile `P`, scope
 `scope`, and input halves when
 
 ```math
+\begin{gathered}
 \mathsf{legal}(P,\mathit{scope},\mathit{sadr},\mathit{ajuz},C)
-\iff
+\iff\\
 \begin{aligned}
 &\mathsf{valid}(P)
 \land C.\mathit{profile}=P.\mathit{id}
@@ -681,6 +681,7 @@ A scope is `(context, initial)`. A certificate is legal for a profile `P`, scope
 &\land \mathsf{choiceTrace}(P.\mathit{forms}[C.\mathit{form}].\mathit{ajuz},
        P.\mathit{forms}[C.\mathit{form}].\mathit{ajuzRules},\mathit{ajuz},C.\mathit{ajuz}).
 \end{aligned}
+\end{gathered}
 ```
 
 The certificate carries its own profile id and context, but `verse::check` does
@@ -691,15 +692,16 @@ half traces under the actual rules.
 The verse derivation relation is
 
 ```math
-\mathsf{verseDerives}(P,\mathit{scope},\mathit{sadr},\mathit{ajuz},\mathit{filter})
-\iff
-\mathsf{valid}(P)
-\land \exists f<|P.\mathit{forms}|:\;
-P.\mathit{forms}[f].\mathit{context}=\mathit{scope}.\mathit{context}
-\land (\neg P.\mathit{forms}[f].\mathit{initialOnly}\lor\mathit{scope}.\mathit{initial})
-\land \mathsf{classMatches}(P.\mathit{forms}[f].\mathit{class},\mathit{filter})
-\land \mathsf{choiceDerives}(P.\mathit{forms}[f].\mathit{sadr},\ldots,\mathit{sadr})
-\land \mathsf{choiceDerives}(P.\mathit{forms}[f].\mathit{ajuz},\ldots,\mathit{ajuz}).
+\begin{aligned}
+&\mathsf{verseDerives}(P,\mathit{scope},\mathit{sadr},\mathit{ajuz},\mathit{filter})\\
+&\iff\mathsf{valid}(P)\\
+&\land\exists f<|P.\mathit{forms}|:\;\\
+&\quad P.\mathit{forms}[f].\mathit{context}=\mathit{scope}.\mathit{context}\\
+&\quad\land(\neg P.\mathit{forms}[f].\mathit{initialOnly}\lor\mathit{scope}.\mathit{initial})\\
+&\quad\land\mathsf{classMatches}(P.\mathit{forms}[f].\mathit{class},\mathit{filter})\\
+&\quad\land\mathsf{choiceDerives}(P.\mathit{forms}[f].\mathit{sadr},\ldots,\mathit{sadr})\\
+&\quad\land\mathsf{choiceDerives}(P.\mathit{forms}[f].\mathit{ajuz},\ldots,\mathit{ajuz}).
+\end{aligned}
 ```
 
 `verse::recognize_form` returns `Some` exactly when the form-specific derivation
@@ -736,20 +738,23 @@ The poem derivation relation is recursive over the input sequence and carries
 the whole prefix history:
 
 ```math
-\mathsf{poemDerives}(P,I,\mathit{Req},\mathit{at},\mathit{filter},\mathit{selected})
-\iff
+\begin{gathered}
+\mathsf{poemDerives}(P,I,\mathit{Req},\mathit{at},\mathit{filter},\mathit{selected})\iff\\
 \begin{cases}
-\bot & \mathit{at}<0 \lor \mathit{at}>|I|,\\
+\bot & \mathit{at}<0\lor\mathit{at}>|I|,\\
 \mathsf{satisfied}(\mathit{Req},\mathit{selected}) & \mathit{at}=|I|,\\
-\exists f<|P.\mathit{forms}|:\;
-\mathsf{classMatches}(P.\mathit{forms}[f].\mathit{class},\mathit{filter})\\
-\quad\land \mathsf{formDerives}(P,\{\mathit{context}=I[\mathit{at}].\mathit{context},
-\mathit{initial}=(\mathit{at}=0)\},I[\mathit{at}].\mathit{sadr},
+\begin{aligned}
+&\exists f<|P.\mathit{forms}|:\;\\
+&\mathsf{classMatches}(P.\mathit{forms}[f].\mathit{class},\mathit{filter})\\
+&\quad\land\mathsf{formDerives}(P,\{\mathit{context}=I[\mathit{at}].\mathit{context},\\
+&\qquad\mathit{initial}=(\mathit{at}=0)\},I[\mathit{at}].\mathit{sadr},
 I[\mathit{at}].\mathit{ajuz},f)\\
-\quad\land \mathsf{poemDerives}(P,I,\mathit{Req},\mathit{at}+1,
-\mathsf{nextFilter}(P,\mathit{filter},f),\mathit{selected}\cdot f)
-& \mathit{at}<|I|.
+&\quad\land\mathsf{poemDerives}(P,I,\mathit{Req},\mathit{at}+1,\\
+&\qquad\mathsf{nextFilter}(P,\mathit{filter},f),\mathit{selected}\cdot f)
+\end{aligned}
+&\mathit{at}<|I|.
 \end{cases}
+\end{gathered}
 ```
 
 The class filter is the mechanism for whole-poem darb-class binding. For
@@ -783,14 +788,14 @@ class discipline, and the same requirement satisfaction. The search function has
 the contract
 
 ```math
-\mathsf{valid}(P)\land 0\le \mathit{at}\le|I|
-\Longrightarrow
-\Bigl(
-\mathsf{search}(P,I,\mathit{Req},\mathit{at},\mathit{filter},\mathit{selected})
-.\mathsf{isSome}()
-\iff
-\mathsf{poemDerives}(P,I,\mathit{Req},\mathit{at},\mathit{filter},\mathit{selected})
+\begin{aligned}
+&\mathsf{valid}(P)\land 0\le\mathit{at}\le|I|\\
+&\Longrightarrow\Bigl(\\
+&\quad\mathsf{search}(P,I,\mathit{Req},\mathit{at},\mathit{filter},\mathit{selected})
+.\mathsf{isSome}()\\
+&\quad\iff\mathsf{poemDerives}(P,I,\mathit{Req},\mathit{at},\mathit{filter},\mathit{selected})
 \Bigr).
+\end{aligned}
 ```
 
 Separately, under the same preconditions, every returned certificate satisfies
