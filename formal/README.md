@@ -31,7 +31,9 @@ If the verifier's compiler is in an isolated rustup installation, add
 Cargo keeps the workspace toolchain. The driver installs nothing, uses
 `--locked --offline` for Cargo integration, and checks proof mutations in
 isolated temporary copies. `CARGO_TARGET_DIR` can place build outputs outside
-this repository.
+this repository. Use a separate build directory for each source checkout;
+sharing one mutable target directory across worktrees can invalidate build
+provenance. The source checkout, not `CARGO_TARGET_DIR`, selects the program.
 
 ## Checked contracts
 
@@ -40,15 +42,22 @@ this repository.
 | Primitive words and rotations | Original words, one-watad named feet, primitive periods, disjoint circle orbits, bounded repetition and cyclic rotation |
 | Layout and immutable profiles | Circle tiling, retained original-base binding and source/lowered correspondence |
 | Morphology and named normalization | Original-coordinate edits, ownership protection, exact normalization result and validity under mechanical eligibility |
-| Adjacency and expansion | Original-letter exclusions; sound, complete, ordered enumeration of compatible alternatives |
-| Catalog compilation | Recipe selection, exact half products, metadata copying, contiguous ranges and exact requirement remapping |
-| Recognition | Exact finite derivation, complete input coverage and checked span witnesses |
+| Adjacency and compact lowering | Exact original-letter rule references and corresponding per-program deletion flags |
+| Reference expansion and catalog utilities | Sound, complete, ordered alternative enumeration; recipe selection, exact half products, metadata copying, contiguous ranges and exact requirement remapping |
+| Constrained recognition | Exact finite derivation with selected-choice exclusions, complete input coverage and checked span witnesses |
 | Verse and poem checking | Profile/context authority, initial-only forms, shared classes and poem-wide existence witnesses |
 
 Successful recognition supplies a certificate satisfying the declared relation.
 A complete negative exhausts the finite declared search. Invalid profiles and
 empty poems are errors at the public profile boundary. There is no heuristic
 cutoff reported as no-match.
+
+Production profiles retain source forms and alternatives. Their constructor
+compiles original-letter rules into flags while preserving source/lowered
+correspondence. Recognition and replay enforce the exclusions on the actual
+selected program indices, including alternatives with equal beat surfaces.
+Reference expansion remains available for finite-language comparison; it is
+not an eager stage of built-in profile construction.
 
 ## Mutation controls
 
@@ -57,8 +66,15 @@ proof-obligation rejection. Controls cover authority, alphabet/input bounds,
 ownership, adjacency, compiler completeness, circle/base provenance,
 normalization coordinates/preconditions/suffixes, alternative ordering and
 coverage, metadata copying, requirement validity and empty-source output.
-Compilation failure, timeout or unrelated diagnostics do not count as the
-intended proof rejection. The driver prints results and diagnostics.
+Compilation failure and timeout do not count as proof rejection. The driver
+recognizes general proof-failure diagnostics; it does not automatically match
+each control to a particular named obligation. Inspect the printed diagnostics
+to confirm that the intended postcondition or invariant failed.
+
+Selected-choice controls cover recognition completeness, source-rule flag
+compilation, and independently bypassing the executable sadr/ajuz replay
+guards. A specification change alone does not demonstrate sensitivity to
+removing a production guard.
 
 ## Trust boundary
 

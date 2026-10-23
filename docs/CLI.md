@@ -13,7 +13,10 @@ watad example الهزج 1
 watad example المستطيل --circle
 ```
 
-`meters` prints ID, name, status and usage-branch count. The optional example
+`meters` prints ID, name, status and usage-branch count. This counts compact
+source forms, including contexts and binding classes, rather than every
+possible rhythm. Foot alternatives and correlation rules remain within forms.
+The optional example
 form index defaults to zero. An example prints `SADR | AJUZ` using the selected
 form's first alternatives; required context is reported separately. Generated
 examples illustrate declared profiles and are not quotations from poetry.

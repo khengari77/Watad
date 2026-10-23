@@ -1,5 +1,6 @@
 //! Lower typed bases and original-coordinate programs without dropping choices.
 use crate::adjacency;
+use crate::choice;
 use crate::verse::{self, BindingPolicy, DarbClass, ProfileId};
 use crate::{
     language::Slot,
@@ -48,6 +49,29 @@ pub open spec fn compilable(s: &FootSlot, position: Position) -> bool {
 pub open spec fn output(s: &FootSlot, i: int) -> Seq<u8> {
     let p = s.programs@[i];
     m::changed(m::expanded(s.units@, s.units@.len() as int), p.actions@, p.actions@.len() as int) + p.suffix@
+}
+
+/// Whether each alternative deletes the rule's original letter.
+pub open spec fn deletion_flags(programs: Seq<Program>, letter: usize) -> Seq<bool> {
+    Seq::new(programs.len(), |i: int| letter < programs[i].actions@.len()
+        && programs[i].actions@[letter as int] == m::Action::Delete)
+}
+
+/// Exact correspondence between one source rule and its compact flags.
+pub open spec fn compiled_rule(
+    slots: Seq<FootSlot>, rule: adjacency::Rule, out: choice::Rule,
+) -> bool {
+    rule.left < slots.len() && rule.right < slots.len()
+        && out.left == rule.left && out.right == rule.right
+        && out.left_deleted@ == deletion_flags(slots[rule.left as int].programs@, rule.left_letter)
+        && out.right_deleted@ == deletion_flags(slots[rule.right as int].programs@, rule.right_letter)
+}
+
+pub open spec fn compiled_rules(
+    slots: Seq<FootSlot>, rules: Seq<adjacency::Rule>, out: Seq<choice::Rule>,
+) -> bool {
+    rules.len() == out.len()
+        && forall|i: int| 0 <= i < rules.len() ==> compiled_rule(slots, rules[i], out[i])
 }
 
 /// Each output index preserves the corresponding source program, including
@@ -103,8 +127,10 @@ pub open spec fn valid(source: &Profile) -> bool {
         && forall|i: int| 0 <= i < source.forms@.len() ==> (
             source.forms@[i].sadr@.len() > 0
             && valid_slots(source.forms@[i].sadr@) && valid_slots(source.forms@[i].ajuz@)
-            && adjacency::valid(source.forms@[i].sadr@,source.forms@[i].sadr_constraints@)
-            && adjacency::valid(source.forms@[i].ajuz@,source.forms@[i].ajuz_constraints@))
+            && (forall|k: int| 0 <= k < source.forms@[i].sadr_constraints@.len()
+                ==> adjacency::rule_scope_ok(source.forms@[i].sadr@,source.forms@[i].sadr_constraints@[k]))
+            && (forall|k: int| 0 <= k < source.forms@[i].ajuz_constraints@.len()
+                ==> adjacency::rule_scope_ok(source.forms@[i].ajuz@,source.forms@[i].ajuz_constraints@[k])))
 }
 
 proof fn slots_equivalent(source: Seq<FootSlot>, target: Seq<Slot>)
@@ -166,10 +192,43 @@ pub open spec fn projected(source: &Profile, target: &verse::Profile) -> bool {
         target.forms@[i].context == source.forms@[i].context
         && target.forms@[i].initial_only == source.forms@[i].initial_only
         && target.forms@[i].class == source.forms@[i].class
-        && adjacency::valid(source.forms@[i].sadr@,source.forms@[i].sadr_constraints@)
-        && adjacency::valid(source.forms@[i].ajuz@,source.forms@[i].ajuz_constraints@)
+        && (forall|k: int| 0 <= k < source.forms@[i].sadr_constraints@.len()
+            ==> adjacency::rule_scope_ok(source.forms@[i].sadr@,source.forms@[i].sadr_constraints@[k]))
+        && (forall|k: int| 0 <= k < source.forms@[i].ajuz_constraints@.len()
+            ==> adjacency::rule_scope_ok(source.forms@[i].ajuz@,source.forms@[i].ajuz_constraints@[k]))
+        && compiled_rules(source.forms@[i].sadr@,source.forms@[i].sadr_constraints@,target.forms@[i].sadr_rules@)
+        && compiled_rules(source.forms@[i].ajuz@,source.forms@[i].ajuz_constraints@,target.forms@[i].ajuz_rules@)
         && projected_slots(source.forms@[i].sadr@, target.forms@[i].sadr@)
         && projected_slots(source.forms@[i].ajuz@, target.forms@[i].ajuz@))
+}
+
+proof fn rules_projection_valid(
+    source: Seq<FootSlot>, target: Seq<Slot>,
+    source_rules: Seq<adjacency::Rule>, target_rules: Seq<choice::Rule>,
+)
+    requires projected_slots(source,target),
+        compiled_rules(source,source_rules,target_rules),
+        forall|k: int| 0 <= k < source_rules.len() ==> adjacency::rule_scope_ok(source,source_rules[k]),
+    ensures choice::valid(target,target_rules),
+{
+    assert forall|i: int| 0 <= i < target_rules.len() implies (
+        target_rules[i].left < target.len() && target_rules[i].right < target.len()
+        && target_rules[i].left_deleted@.len() == target[target_rules[i].left as int].words@.len()
+        && target_rules[i].right_deleted@.len() == target[target_rules[i].right as int].words@.len()
+    ) by {
+        assert(compiled_rule(source,source_rules[i],target_rules[i]));
+        assert(adjacency::rule_scope_ok(source,source_rules[i]));
+        assert(target_rules[i].left == source_rules[i].left);
+        assert(target_rules[i].right == source_rules[i].right);
+        assert(target_rules[i].left_deleted@
+            == deletion_flags(source[source_rules[i].left as int].programs@,source_rules[i].left_letter));
+        assert(target_rules[i].right_deleted@
+            == deletion_flags(source[source_rules[i].right as int].programs@,source_rules[i].right_letter));
+        assert(target[source_rules[i].left as int].words@.len()
+            == source[source_rules[i].left as int].programs@.len());
+        assert(target[source_rules[i].right as int].words@.len()
+            == source[source_rules[i].right as int].programs@.len());
+    }
 }
 
 pub proof fn projection_equivalent(source: &Profile, target: &verse::Profile)
@@ -183,7 +242,80 @@ pub proof fn projection_equivalent(source: &Profile, target: &verse::Profile)
             == valid_slots(source.forms@[i].ajuz@)) by {
         slots_equivalent(source.forms@[i].sadr@,target.forms@[i].sadr@);
         slots_equivalent(source.forms@[i].ajuz@,target.forms@[i].ajuz@);
+        rules_projection_valid(source.forms@[i].sadr@,target.forms@[i].sadr@,
+            source.forms@[i].sadr_constraints@,target.forms@[i].sadr_rules@);
+        rules_projection_valid(source.forms@[i].ajuz@,target.forms@[i].ajuz@,
+            source.forms@[i].ajuz_constraints@,target.forms@[i].ajuz_rules@);
+        assert(choice::valid(target.forms@[i].sadr@,target.forms@[i].sadr_rules@));
+        assert(choice::valid(target.forms@[i].ajuz@,target.forms@[i].ajuz_rules@));
     }
+}
+
+fn compile_deletion_flags(programs: &[Program], letter: usize) -> (out: Vec<bool>)
+    requires forall|i: int| 0 <= i < programs.len() ==> letter < programs@[i].actions@.len(),
+    ensures out@ == deletion_flags(programs@, letter),
+{
+    let mut out = Vec::new();
+    let mut i = 0;
+    while i < programs.len()
+        invariant i <= programs.len(), out@.len() == i,
+            forall|j: int| 0 <= j < programs.len() ==> letter < programs@[j].actions@.len(),
+            forall|j: int| 0 <= j < i ==>
+                out@[j] == (letter < programs@[j].actions@.len()
+                    && programs@[j].actions@[letter as int] == m::Action::Delete),
+        decreases programs.len() - i,
+    {
+        out.push(programs[i].actions[letter] == m::Action::Delete);
+        i += 1;
+    }
+    out
+}
+
+fn compile_rule(slots: &[FootSlot], rule: adjacency::Rule) -> (answer: Result<choice::Rule, InvalidProfile>)
+    ensures match answer {
+        Err(_) => !adjacency::rule_scope_ok(slots@, rule),
+        Ok(out) => adjacency::rule_scope_ok(slots@, rule)
+            && compiled_rule(slots@, rule, out),
+    },
+{
+    if !adjacency::check_rule_scope_ok(slots, rule) { return Err(InvalidProfile); }
+    let left_deleted = compile_deletion_flags(&slots[rule.left].programs, rule.left_letter);
+    let right_deleted = compile_deletion_flags(&slots[rule.right].programs, rule.right_letter);
+    Ok(choice::Rule {
+        left: rule.left,
+        right: rule.right,
+        left_deleted,
+        right_deleted,
+    })
+}
+
+fn compile_rules(
+    slots: &[FootSlot], rules: &[adjacency::Rule],
+) -> (answer: Result<Vec<choice::Rule>, InvalidProfile>)
+    ensures match answer {
+        Err(_) => !(forall|j: int| 0 <= j < rules@.len()
+            ==> adjacency::rule_scope_ok(slots@, rules@[j])),
+        Ok(out) => (forall|j: int| 0 <= j < rules@.len()
+            ==> adjacency::rule_scope_ok(slots@, rules@[j]))
+            && compiled_rules(slots@, rules@, out@),
+    },
+{
+    let mut out: Vec<choice::Rule> = Vec::new();
+    let mut i = 0;
+    while i < rules.len()
+        invariant i <= rules.len(), out@.len() == i,
+            forall|j: int| 0 <= j < i ==> adjacency::rule_scope_ok(slots@, rules@[j]),
+            forall|j: int| 0 <= j < i ==> compiled_rule(slots@, rules@[j], out@[j]),
+        decreases rules.len() - i,
+    {
+        let compiled = match compile_rule(slots, rules[i]) {
+            Err(_) => return Err(InvalidProfile),
+            Ok(rule) => rule,
+        };
+        out.push(compiled);
+        i += 1;
+    }
+    Ok(out)
 }
 
 /// Compile all branches and alternatives, retaining their indices. Structural
@@ -199,17 +331,25 @@ pub fn compile_profile(source: &Profile) -> (answer: Result<verse::Profile, Inva
                 forms@[j].context == source.forms@[j].context
                 && forms@[j].initial_only == source.forms@[j].initial_only
                 && forms@[j].class == source.forms@[j].class
-                && adjacency::valid(source.forms@[j].sadr@,source.forms@[j].sadr_constraints@)
-                && adjacency::valid(source.forms@[j].ajuz@,source.forms@[j].ajuz_constraints@)
+                && (forall|k: int| 0 <= k < source.forms@[j].sadr_constraints@.len()
+                    ==> adjacency::rule_scope_ok(source.forms@[j].sadr@,source.forms@[j].sadr_constraints@[k]))
+                && (forall|k: int| 0 <= k < source.forms@[j].ajuz_constraints@.len()
+                    ==> adjacency::rule_scope_ok(source.forms@[j].ajuz@,source.forms@[j].ajuz_constraints@[k]))
+                && compiled_rules(source.forms@[j].sadr@,source.forms@[j].sadr_constraints@,forms@[j].sadr_rules@)
+                && compiled_rules(source.forms@[j].ajuz@,source.forms@[j].ajuz_constraints@,forms@[j].ajuz_rules@)
                 && projected_slots(source.forms@[j].sadr@, forms@[j].sadr@)
                 && projected_slots(source.forms@[j].ajuz@, forms@[j].ajuz@)),
         decreases source.forms.len() - i,
     {
         let f = &source.forms[i];
-        if !adjacency::check(&f.sadr,&f.sadr_constraints) || !adjacency::check(&f.ajuz,&f.ajuz_constraints) { return Err(InvalidProfile); }
         let sadr = match compile_slots(&f.sadr) { Err(_) => return Err(InvalidProfile), Ok(v) => v };
         let ajuz = match compile_slots(&f.ajuz) { Err(_) => return Err(InvalidProfile), Ok(v) => v };
-        forms.push(verse::Form { context: f.context, initial_only: f.initial_only, class: f.class, sadr, ajuz });
+        let sadr_rules = match compile_rules(&f.sadr,&f.sadr_constraints) { Err(_) => return Err(InvalidProfile), Ok(v) => v };
+        let ajuz_rules = match compile_rules(&f.ajuz,&f.ajuz_constraints) { Err(_) => return Err(InvalidProfile), Ok(v) => v };
+        forms.push(verse::Form {
+            context: f.context, initial_only: f.initial_only, class: f.class,
+            sadr, ajuz, sadr_rules, ajuz_rules,
+        });
         i += 1;
     }
     let target = verse::Profile { id: source.id, binding: source.binding, forms };

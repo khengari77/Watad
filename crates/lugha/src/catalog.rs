@@ -166,9 +166,63 @@ fn map_catalog_error(error: watad_checker::catalog::Error) -> meter::Error {
     }
 }
 
+fn same_form(a: &Form, b: &Form) -> bool {
+    a.feet == b.feet
+        && a.context == b.context
+        && a.initial_only == b.initial_only
+        && a.class == b.class
+        && a.constraints == b.constraints
+        && a.sadr == b.sadr
+        && a.ajuz == b.ajuz
+}
+
+/// Remove only rows identical in every semantic field and in requirement-group
+/// membership, keeping the first source coordinate. A duplicate that belongs to
+/// a different witness group is not interchangeable even when its recipes match.
+fn remove_exact_duplicates(
+    forms: Vec<Form>,
+    requirements: Vec<Vec<usize>>,
+) -> (Vec<Form>, Vec<Vec<usize>>) {
+    let membership: Vec<Vec<bool>> = (0..forms.len())
+        .map(|index| {
+            requirements
+                .iter()
+                .map(|group| group.contains(&index))
+                .collect()
+        })
+        .collect();
+    let mut unique: Vec<(Form, Vec<bool>)> = Vec::new();
+    let mut old_to_new = Vec::with_capacity(forms.len());
+    for (index, form) in forms.into_iter().enumerate() {
+        match unique.iter().position(|(kept, kept_membership)| {
+            same_form(kept, &form) && kept_membership == &membership[index]
+        }) {
+            Some(index) => old_to_new.push(index),
+            None => {
+                old_to_new.push(unique.len());
+                unique.push((form, membership[index].clone()));
+            }
+        }
+    }
+    let unique = unique.into_iter().map(|(form, _)| form).collect();
+    let requirements = requirements
+        .into_iter()
+        .map(|group| {
+            let mut mapped: Vec<_> = group.into_iter().map(|index| old_to_new[index]).collect();
+            mapped.sort_unstable();
+            mapped.dedup();
+            mapped
+        })
+        .collect();
+    (unique, requirements)
+}
+
 /// Apply the verified half expansion to every source form and remap poem
 /// requirement groups through the resulting contiguous source-form ranges.
-fn expand_forms(
+/// Reference expander retained as an independent test oracle. Production
+/// construction stores the source rows and reports them directly.
+#[doc(hidden)]
+pub fn reference_expand_forms(
     meter: MeterName,
     forms: Vec<Form>,
     requirements: Vec<Vec<usize>>,
@@ -424,6 +478,7 @@ pub fn hashimi(meter: MeterName) -> Result<Option<MeterProfile>, meter::Error> {
         }
     }
     usage_licences(meter, &mut forms);
+    let (forms, mut requirements) = remove_exact_duplicates(forms, requirements);
     if meter == Wafir {
         requirements = vec![
             forms
@@ -436,11 +491,21 @@ pub fn hashimi(meter: MeterName) -> Result<Option<MeterProfile>, meter::Error> {
                 .collect(),
         ];
     }
-    let (forms, requirements) = expand_forms(meter, forms, requirements)?;
     MeterProfile::new(Definition {
         id: ProfileId {
             family: 2000 + meter.id() as u16,
-            revision: 1,
+            revision: if matches!(
+                meter,
+                MeterName::Madid
+                    | MeterName::Ramal
+                    | MeterName::Wafir
+                    | MeterName::Khafif
+                    | MeterName::Mujtathth
+            ) {
+                2
+            } else {
+                1
+            },
         },
         meter,
         source: HASHIMI,
@@ -449,4 +514,93 @@ pub fn hashimi(meter: MeterName) -> Result<Option<MeterProfile>, meter::Error> {
         requirements,
     })
     .map(Some)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use watad_checker::poem;
+
+    fn form() -> Form {
+        Form {
+            constraints: vec![],
+            feet: 2,
+            context: 0,
+            initial_only: false,
+            class: DarbClass(0),
+            sadr: vec![vec![vec![]]; 2],
+            ajuz: vec![vec![vec![]]; 2],
+        }
+    }
+
+    fn profile(forms: Vec<Form>, requirements: Vec<Vec<usize>>) -> MeterProfile {
+        MeterProfile::new(Definition {
+            id: ProfileId {
+                family: 9900,
+                revision: 1,
+            },
+            meter: MeterName::Mujtathth,
+            source: "dedup regression",
+            binding: BindingPolicy::FixedDarbClass,
+            forms,
+            requirements,
+        })
+        .unwrap()
+    }
+
+    fn words(profile: &MeterProfile, form: usize) -> (Vec<u8>, Vec<u8>) {
+        let k = &profile.kernel().forms[form];
+        let sadr = k
+            .sadr
+            .iter()
+            .flat_map(|slot| slot.words[0].iter().copied())
+            .collect();
+        let ajuz = k
+            .ajuz
+            .iter()
+            .flat_map(|slot| slot.words[0].iter().copied())
+            .collect();
+        (sadr, ajuz)
+    }
+
+    #[test]
+    fn exact_duplicates_with_same_witness_membership_merge() {
+        let f = form();
+        let (forms, requirements) = remove_exact_duplicates(vec![f.clone(), f], vec![vec![0, 1]]);
+        assert_eq!(forms.len(), 1);
+        assert_eq!(requirements, vec![vec![0]]);
+    }
+
+    #[test]
+    fn duplicates_in_different_witness_groups_remain_distinct() {
+        let f = form();
+        let (forms, requirements) =
+            remove_exact_duplicates(vec![f.clone(), f], vec![vec![0], vec![1]]);
+        assert_eq!(forms.len(), 2);
+        assert_eq!(requirements, vec![vec![0], vec![1]]);
+
+        let p = profile(forms, requirements);
+        let (s0, a0) = words(&p, 0);
+        let (s1, a1) = words(&p, 1);
+        let first = [poem::Input {
+            context: 0,
+            sadr: &s0,
+            ajuz: &a0,
+        }];
+        assert!(p.recognize_poem(&first).unwrap().is_none());
+        let both = [
+            poem::Input {
+                context: 0,
+                sadr: &s0,
+                ajuz: &a0,
+            },
+            poem::Input {
+                context: 0,
+                sadr: &s1,
+                ajuz: &a1,
+            },
+        ];
+        let certificates = p.recognize_poem(&both).unwrap().unwrap();
+        assert!(p.check_poem(&both, &certificates));
+    }
 }

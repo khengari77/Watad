@@ -1,7 +1,8 @@
 //! Generic, versioned finite meter profiles, terminal branches and certificates.
 //! The core has no meter-name or named-operation dispatch.
 
-use crate::language::{self, Slot, Step};
+use crate::choice;
+use crate::language::{Slot, Step};
 use alloc::vec::Vec;
 #[cfg(not(verus_keep_ghost))]
 use verus_builtin_macros::verus;
@@ -34,6 +35,8 @@ pub struct Form {
     pub class: DarbClass,
     pub sadr: Vec<Slot>,
     pub ajuz: Vec<Slot>,
+    pub sadr_rules: Vec<choice::Rule>,
+    pub ajuz_rules: Vec<choice::Rule>,
 }
 
 pub struct Profile {
@@ -121,6 +124,8 @@ pub open spec fn valid(p: &Profile) -> bool {
         && forall|i: int| 0 <= i < p.forms@.len()
             ==> slots_valid(p.forms@[i].sadr@)
                 && (p.forms@[i].ajuz@.len() == 0 || slots_valid(p.forms@[i].ajuz@))
+                && choice::valid(p.forms@[i].sadr@, p.forms@[i].sadr_rules@)
+                && choice::valid(p.forms@[i].ajuz@, p.forms@[i].ajuz_rules@)
 }
 
 /// Schema validation is mathematical; historical authority is an external fact.
@@ -134,11 +139,15 @@ pub fn validate(p: &Profile) -> (yes: bool)
             p.forms.len() > 0, i <= p.forms.len(),
             forall|j: int| 0 <= j < i ==>
                 slots_valid(p.forms@[j].sadr@)
-                    && (p.forms@[j].ajuz@.len() == 0 || slots_valid(p.forms@[j].ajuz@)),
+                    && (p.forms@[j].ajuz@.len() == 0 || slots_valid(p.forms@[j].ajuz@))
+                    && choice::valid(p.forms@[j].sadr@, p.forms@[j].sadr_rules@)
+                    && choice::valid(p.forms@[j].ajuz@, p.forms@[j].ajuz_rules@),
         decreases p.forms.len() - i,
     {
         if !check_slots(&p.forms[i].sadr)
-            || (!p.forms[i].ajuz.is_empty() && !check_slots(&p.forms[i].ajuz)) { return false; }
+            || (!p.forms[i].ajuz.is_empty() && !check_slots(&p.forms[i].ajuz))
+            || !choice::validate(&p.forms[i].sadr, &p.forms[i].sadr_rules)
+            || !choice::validate(&p.forms[i].ajuz, &p.forms[i].ajuz_rules) { return false; }
         i += 1;
     }
     true
@@ -149,8 +158,8 @@ pub open spec fn legal(p: &Profile, scope: Scope, sadr: Seq<u8>, ajuz: Seq<u8>,
     valid(p) && c.profile == p.id && c.context == scope.context
         && c.form < p.forms@.len() && p.forms@[c.form as int].context == scope.context
         && (!p.forms@[c.form as int].initial_only || scope.initial)
-        && language::trace(p.forms@[c.form as int].sadr@, sadr, 0, 0, c.sadr@)
-        && language::trace(p.forms@[c.form as int].ajuz@, ajuz, 0, 0, c.ajuz@)
+        && choice::trace(p.forms@[c.form as int].sadr@, p.forms@[c.form as int].sadr_rules@, sadr, c.sadr@)
+        && choice::trace(p.forms@[c.form as int].ajuz@, p.forms@[c.form as int].ajuz_rules@, ajuz, c.ajuz@)
 }
 
 pub fn check(p: &Profile, scope: Scope, sadr: &[u8], ajuz: &[u8], c: &Certificate)
@@ -161,8 +170,9 @@ pub fn check(p: &Profile, scope: Scope, sadr: &[u8], ajuz: &[u8], c: &Certificat
         return false;
     }
     let f = &p.forms[c.form];
-    f.context == scope.context && (!f.initial_only || scope.initial) && language::check(&f.sadr, sadr, &c.sadr)
-        && language::check(&f.ajuz, ajuz, &c.ajuz)
+    f.context == scope.context && (!f.initial_only || scope.initial)
+        && choice::check(&f.sadr, &f.sadr_rules, sadr, &c.sadr)
+        && choice::check(&f.ajuz, &f.ajuz_rules, ajuz, &c.ajuz)
 }
 
 pub open spec fn class_matches(class: DarbClass, filter: Option<DarbClass>) -> bool {
@@ -179,15 +189,15 @@ pub open spec fn derives(p: &Profile, scope: Scope, sadr: Seq<u8>, ajuz: Seq<u8>
                         filter: Option<DarbClass>) -> bool {
     valid(p) && exists|i: int| 0 <= i < p.forms@.len()
         && p.forms@[i].context == scope.context && (!p.forms@[i].initial_only || scope.initial) && class_matches(p.forms@[i].class, filter)
-        && language::derives(p.forms@[i].sadr@, sadr, 0, 0)
-        && language::derives(p.forms@[i].ajuz@, ajuz, 0, 0)
+        && choice::derives(p.forms@[i].sadr@, p.forms@[i].sadr_rules@, sadr)
+        && choice::derives(p.forms@[i].ajuz@, p.forms@[i].ajuz_rules@, ajuz)
 }
 
 pub open spec fn form_derives(p: &Profile, scope: Scope, sadr: Seq<u8>, ajuz: Seq<u8>, f: int) -> bool {
     valid(p) && 0 <= f < p.forms@.len()
         && p.forms@[f].context == scope.context && (!p.forms@[f].initial_only || scope.initial)
-        && language::derives(p.forms@[f].sadr@, sadr, 0, 0)
-        && language::derives(p.forms@[f].ajuz@, ajuz, 0, 0)
+        && choice::derives(p.forms@[f].sadr@, p.forms@[f].sadr_rules@, sadr)
+        && choice::derives(p.forms@[f].ajuz@, p.forms@[f].ajuz_rules@, ajuz)
 }
 
 #[allow(clippy::question_mark)] // Verus checks each explicit early-return branch.
@@ -199,8 +209,8 @@ pub fn recognize_form(p: &Profile, scope: Scope, sadr: &[u8], ajuz: &[u8], f: us
     if !validate(p) || f >= p.forms.len() { return None; }
     let form = &p.forms[f];
     if form.context != scope.context || (form.initial_only && !scope.initial) { return None; }
-    let s = match language::recognize(&form.sadr, sadr) { None => return None, Some(s) => s };
-    let a = match language::recognize(&form.ajuz, ajuz) { None => return None, Some(a) => a };
+    let s = match choice::recognize(&form.sadr, &form.sadr_rules, sadr) { None => return None, Some(s) => s };
+    let a = match choice::recognize(&form.ajuz, &form.ajuz_rules, ajuz) { None => return None, Some(a) => a };
     Some(Certificate { profile: p.id, context: scope.context, form: f, sadr: s, ajuz: a })
 }
 
@@ -208,8 +218,8 @@ pub proof fn certificate_derives(p: &Profile, scope: Scope, sadr: Seq<u8>, ajuz:
     requires legal(p, scope, sadr, ajuz, c),
     ensures form_derives(p, scope, sadr, ajuz, c.form as int),
 {
-    language::trace_is_derivation(p.forms@[c.form as int].sadr@, sadr, 0, 0, c.sadr@);
-    language::trace_is_derivation(p.forms@[c.form as int].ajuz@, ajuz, 0, 0, c.ajuz@);
+    choice::trace_is_derivation(p.forms@[c.form as int].sadr@, p.forms@[c.form as int].sadr_rules@, sadr, c.sadr@);
+    choice::trace_is_derivation(p.forms@[c.form as int].ajuz@, p.forms@[c.form as int].ajuz_rules@, ajuz, c.ajuz@);
 }
 
 /// Exact recognition, optionally constrained by a poem's selected binding class.
@@ -233,19 +243,19 @@ pub fn recognize(p: &Profile, scope: Scope, sadr: &[u8], ajuz: &[u8],
         invariant valid(p), i <= p.forms.len(),
             forall|j: int| 0 <= j < i ==> !(
                 p.forms@[j].context == scope.context && (!p.forms@[j].initial_only || scope.initial) && class_matches(p.forms@[j].class, filter)
-                && language::derives(p.forms@[j].sadr@, sadr@, 0, 0)
-                && language::derives(p.forms@[j].ajuz@, ajuz@, 0, 0)),
+                && choice::derives(p.forms@[j].sadr@, p.forms@[j].sadr_rules@, sadr@)
+                && choice::derives(p.forms@[j].ajuz@, p.forms@[j].ajuz_rules@, ajuz@)),
         decreases p.forms.len() - i,
     {
         let f = &p.forms[i];
         if f.context == scope.context && (!f.initial_only || scope.initial) && matches_class(f.class, filter) {
-            if let Some(s) = language::recognize(&f.sadr, sadr) {
-                if let Some(a) = language::recognize(&f.ajuz, ajuz) {
+            if let Some(s) = choice::recognize(&f.sadr, &f.sadr_rules, sadr) {
+                if let Some(a) = choice::recognize(&f.ajuz, &f.ajuz_rules, ajuz) {
                     let c = Certificate { profile: p.id, context: scope.context, form: i, sadr: s, ajuz: a };
                     assert(exists|j: int| 0 <= j < p.forms@.len()
                         && p.forms@[j].context == scope.context && (!p.forms@[j].initial_only || scope.initial) && class_matches(p.forms@[j].class, filter)
-                        && language::derives(p.forms@[j].sadr@, sadr@, 0, 0)
-                        && language::derives(p.forms@[j].ajuz@, ajuz@, 0, 0));
+                        && choice::derives(p.forms@[j].sadr@, p.forms@[j].sadr_rules@, sadr@)
+                        && choice::derives(p.forms@[j].ajuz@, p.forms@[j].ajuz_rules@, ajuz@));
                     return Ok(Some(c));
                 }
             }

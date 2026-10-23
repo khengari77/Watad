@@ -11,6 +11,8 @@ fn form(context: u16, class: u16, a: &[u8], b: &[u8]) -> Form {
         ajuz: vec![Slot {
             words: vec![b.to_vec()],
         }],
+        sadr_rules: vec![],
+        ajuz_rules: vec![],
     }
 }
 
@@ -161,6 +163,8 @@ fn malformed_profile_is_an_error_instead_of_a_complete_negative() {
                 ajuz: vec![Slot {
                     words: vec![vec![1]],
                 }],
+                sadr_rules: vec![],
+                ajuz_rules: vec![],
             }],
         };
         assert!(!validate(&p));

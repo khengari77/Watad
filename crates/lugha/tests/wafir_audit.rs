@@ -29,10 +29,11 @@ fn bits(s: &str) -> Vec<u8> {
 #[test]
 fn exact_terminal_recipes_classes_contexts_and_requirement_membership() {
     let p = catalog::hashimi(MeterName::Wafir).unwrap().unwrap();
+    assert_eq!(p.definition().id.revision, 2);
     let n = vec![];
     let a = vec![Change::Zihaf(Asb)];
     let q = vec![Change::Illa(Qatf)];
-    // Literal source-form order, including the duplicated tasri source branches.
+    // Literal source-form order; identical tasri rows share one source coordinate.
     let rows = [
         (3, 0, false, 0, &q, &q),
         (2, 0, false, 1, &n, &n),
@@ -42,13 +43,11 @@ fn exact_terminal_recipes_classes_contexts_and_requirement_membership() {
         (3, 1, true, 0, &q, &q),
         (2, 1, true, 1, &n, &n),
         (2, 1, true, 2, &a, &a),
-        (2, 1, true, 1, &n, &n),
-        (2, 1, true, 2, &a, &a),
     ];
     assert_eq!(p.definition().forms.len(), rows.len());
     assert_eq!(p.structured().forms.len(), rows.len());
     assert_eq!(p.kernel().forms.len(), rows.len());
-    assert_eq!(p.definition().requirements, vec![vec![0, 1, 2, 5, 6, 8]]);
+    assert_eq!(p.definition().requirements, vec![vec![0, 1, 2, 5, 6]]);
     for (i, (feet, context, initial, class, arud, darb)) in rows.iter().enumerate() {
         let f = &p.definition().forms[i];
         assert_eq!(

@@ -57,12 +57,16 @@ fn every_pair_of_independent_alternatives_must_satisfy_the_exclusion() {
 }
 
 #[test]
-fn every_declared_catalog_constraint_is_rechecked_by_the_kernel() {
+fn every_declared_catalog_constraint_is_scoped_to_its_selected_path() {
     for meter in watad_lugha::catalog::meters() {
         if let Some(p) = watad_lugha::catalog::hashimi(meter).unwrap() {
             for f in &p.structured().forms {
-                assert!(adjacency::check(&f.sadr, &f.sadr_constraints));
-                assert!(adjacency::check(&f.ajuz, &f.ajuz_constraints));
+                for rule in &f.sadr_constraints {
+                    assert!(adjacency::check_rule_scope_ok(&f.sadr, *rule));
+                }
+                for rule in &f.ajuz_constraints {
+                    assert!(adjacency::check_rule_scope_ok(&f.ajuz, *rule));
+                }
             }
         }
     }
@@ -75,8 +79,15 @@ fn mujtath_strict_profile_preserves_both_correlations_and_endpoint_scope() {
     let p = watad_lugha::catalog::hashimi(watad_daira::MeterName::Mujtathth)
         .unwrap()
         .unwrap();
+    let d = p.definition();
+    let (forms, _) = watad_lugha::catalog::reference_expand_forms(
+        watad_daira::MeterName::Mujtathth,
+        d.forms.clone(),
+        d.requirements.clone(),
+    )
+    .unwrap();
     let mut arud_shakl = false;
-    for f in &p.definition().forms {
+    for f in &forms {
         assert_eq!(f.constraints.len(), 2);
         for half in [&f.sadr, &f.ajuz] {
             for left in &half[0] {

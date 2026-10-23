@@ -17,6 +17,8 @@ fn form(s: u8, a: u8, class: u16) -> Form {
         ajuz: vec![Slot {
             words: vec![vec![a]],
         }],
+        sadr_rules: vec![],
+        ajuz_rules: vec![],
     }
 }
 

@@ -14,7 +14,7 @@ const BASELINE: &[(usize, u64)] = &[
     (0, 14392082618841318173),
     (1, 13687479835588942898),
     (3, 4700440537733232076),
-    (5, 15449220852606132190),
+    (5, 11926285994852746849),
     (6, 11631999485730656010),
     (8, 11334243385780839483),
     (9, 8682980753362656279),
@@ -30,23 +30,26 @@ const BASELINE: &[(usize, u64)] = &[
 ];
 
 #[test]
-fn catalog_structure_matches_the_declared_profile_fingerprint() {
+fn catalog_structure_matches_the_reviewed_baseline() {
     let mut usage = 0;
     for meter in catalog::meters() {
         let Some(p) = catalog::hashimi(meter).unwrap() else {
             continue;
         };
         let d = p.definition();
+        let (forms, requirements) =
+            catalog::reference_expand_forms(meter, d.forms.clone(), d.requirements.clone())
+                .unwrap();
         let mut s = String::new();
         let _ = write!(
             s,
             "{} {} {:?} {}",
-            d.forms.len(),
-            d.requirements.len(),
+            forms.len(),
+            requirements.len(),
             d.binding,
-            d.forms.iter().map(|f| f.feet).sum::<usize>()
+            forms.iter().map(|f| f.feet).sum::<usize>()
         );
-        for f in &d.forms {
+        for f in &forms {
             let _ = write!(
                 s,
                 "|{},{},{},{},{}",
@@ -78,10 +81,10 @@ fn catalog_structure_matches_the_declared_profile_fingerprint() {
                 let _ = write!(s, "]");
             }
         }
-        for g in &d.requirements {
+        for g in &requirements {
             let _ = write!(s, "g{g:?}");
         }
-        let _ = write!(s, "reqs{:?}", d.requirements);
+        let _ = write!(s, "reqs{:?}", requirements);
         let actual = hash(s.as_bytes());
         let expected = BASELINE
             .iter()

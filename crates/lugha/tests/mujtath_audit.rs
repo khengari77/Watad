@@ -2,6 +2,8 @@ use std::collections::HashSet;
 
 use watad_checker::{
     adjacency::{self, Rule},
+    choice,
+    language::Step,
     structured::FootSlot,
 };
 use watad_daira::MeterName;
@@ -128,103 +130,106 @@ fn accepts(p: &MeterProfile, sadr: &str, ajuz: &str) -> bool {
     .is_some()
 }
 
+fn selected_pairs(
+    p: &MeterProfile,
+    index: usize,
+    sadr: bool,
+) -> HashSet<(Vec<Change>, Vec<Change>)> {
+    let f = &p.definition().forms[index];
+    let k = &p.kernel().forms[index];
+    let (slots, rules) = if sadr {
+        (&f.sadr, &k.sadr_rules)
+    } else {
+        (&f.ajuz, &k.ajuz_rules)
+    };
+    let mut pairs = HashSet::new();
+    for (i, left) in slots[0].iter().enumerate() {
+        for (j, right) in slots[1].iter().enumerate() {
+            let steps = [
+                Step {
+                    choice: i,
+                    start: 0,
+                    end: 0,
+                },
+                Step {
+                    choice: j,
+                    start: 0,
+                    end: 0,
+                },
+            ];
+            if choice::check_rules(rules, &steps) {
+                pairs.insert((left.clone(), right.clone()));
+            }
+        }
+    }
+    pairs
+}
+
 #[test]
 fn mujtath_declared_matrix_is_exact_endpoint_and_reciprocity_rules() {
     let p = profile();
     let rules = expected_rules();
-    let mut ordinary = 0;
-    let mut bodies = HashSet::new();
-    let mut aruds = HashSet::new();
-    let mut darbs = HashSet::new();
-    let mut sadr_pairs = HashSet::new();
-    let mut ajuz_pairs = HashSet::new();
-    let mut combinations = HashSet::new();
-
-    for f in p.definition().forms.iter().filter(|f| f.context == 0) {
-        ordinary += 1;
-        assert_eq!(f.feet, 2);
-        assert_eq!(f.constraints, rules);
-        assert_eq!(f.sadr.len(), 2);
-        assert_eq!(f.ajuz.len(), 2);
-
-        for recipe in &f.sadr[0] {
-            bodies.insert(recipe.clone());
-        }
-        for recipe in &f.sadr[1] {
-            aruds.insert(recipe.clone());
-        }
-        for recipe in &f.ajuz[0] {
-            bodies.insert(recipe.clone());
-        }
-        for recipe in &f.ajuz[1] {
-            darbs.insert(recipe.clone());
-        }
-        for left in &f.sadr[0] {
-            for right in &f.sadr[1] {
-                sadr_pairs.insert((left.clone(), right.clone()));
-            }
-        }
-        for left in &f.ajuz[0] {
-            for right in &f.ajuz[1] {
-                ajuz_pairs.insert((left.clone(), right.clone()));
-            }
-        }
-        assert_eq!(f.sadr[0].len(), 1);
-        assert_eq!(f.sadr[1].len(), 1);
-        assert_eq!(f.ajuz[0].len(), 1);
-        assert_eq!(f.ajuz[1].len(), 1);
-        combinations.insert((
-            f.sadr[0][0].clone(),
-            f.sadr[1][0].clone(),
-            f.ajuz[0][0].clone(),
-            f.ajuz[1][0].clone(),
-        ));
-    }
-
-    assert_eq!(ordinary, 90);
-    assert_eq!(bodies, recipe_set(&body_recipes()));
-    assert_eq!(aruds, recipe_set(&arud_recipes()));
-    assert_eq!(darbs, recipe_set(&darb_recipes()));
+    assert_eq!(p.definition().forms.len(), 2);
+    assert_eq!(p.definition().id.revision, 2);
+    let ordinary: Vec<_> = p
+        .definition()
+        .forms
+        .iter()
+        .enumerate()
+        .filter(|(_, f)| f.context == 0)
+        .collect();
+    assert_eq!(ordinary.len(), 1);
+    let (index, f) = ordinary[0];
+    assert_eq!(f.feet, 2);
+    assert_eq!(f.constraints, rules);
+    assert_eq!(f.sadr, vec![body_recipes(), arud_recipes()]);
+    assert_eq!(f.ajuz, vec![body_recipes(), darb_recipes()]);
+    let sadr_pairs = selected_pairs(&p, index, true);
+    let ajuz_pairs = selected_pairs(&p, index, false);
     assert_eq!(sadr_pairs, expected_pairs(&body_recipes(), &arud_recipes()));
     assert_eq!(ajuz_pairs, expected_pairs(&body_recipes(), &darb_recipes()));
     assert_eq!(sadr_pairs.len(), 9);
     assert_eq!(ajuz_pairs.len(), 10);
-
-    let mut expected_forms = HashSet::new();
-    for (left_body, left_arud) in &sadr_pairs {
-        for (right_body, right_darb) in &ajuz_pairs {
-            expected_forms.insert((
-                left_body.clone(),
-                left_arud.clone(),
-                right_body.clone(),
-                right_darb.clone(),
-            ));
-        }
-    }
-    assert_eq!(combinations, expected_forms);
-
-    let mut tasri = 0;
-    let mut tasri_arud = HashSet::new();
-    let mut tasri_darb = HashSet::new();
-    for f in p.definition().forms.iter().filter(|f| f.context == 1) {
-        tasri += 1;
-        for recipe in &f.sadr[1] {
-            tasri_arud.insert(recipe.clone());
-        }
-        for recipe in &f.ajuz[1] {
-            tasri_darb.insert(recipe.clone());
-        }
-    }
-    assert_eq!(tasri, 100);
-    assert_eq!(tasri_arud, tasri_darb);
-    assert_eq!(tasri_arud, recipe_set(&darb_recipes()));
-    assert_eq!(tasri_darb, recipe_set(&darb_recipes()));
-
+    let combinations: HashSet<_> = sadr_pairs
+        .iter()
+        .flat_map(|(a, b)| {
+            ajuz_pairs
+                .iter()
+                .map(move |(c, d)| (a.clone(), b.clone(), c.clone(), d.clone()))
+        })
+        .collect();
+    assert_eq!(combinations.len(), 90);
+    let tasri: Vec<_> = p
+        .definition()
+        .forms
+        .iter()
+        .enumerate()
+        .filter(|(_, f)| f.context == 1)
+        .collect();
+    assert_eq!(tasri.len(), 1);
+    let (index, f) = tasri[0];
+    assert!(f.initial_only);
+    assert_eq!(recipe_set(&f.sadr[1]), recipe_set(&darb_recipes()));
+    assert_eq!(recipe_set(&f.ajuz[1]), recipe_set(&darb_recipes()));
+    assert_eq!(
+        selected_pairs(&p, index, true),
+        expected_pairs(&body_recipes(), &darb_recipes())
+    );
+    assert_eq!(
+        selected_pairs(&p, index, false),
+        expected_pairs(&body_recipes(), &darb_recipes())
+    );
+    assert_eq!(
+        selected_pairs(&p, index, true).len() * selected_pairs(&p, index, false).len(),
+        100
+    );
     for f in &p.structured().forms {
         assert_eq!(f.sadr_constraints, rules);
         assert_eq!(f.ajuz_constraints, rules);
-        assert!(adjacency::check(&f.sadr, &f.sadr_constraints));
-        assert!(adjacency::check(&f.ajuz, &f.ajuz_constraints));
+        for r in &rules {
+            assert!(adjacency::check_rule_scope_ok(&f.sadr, *r));
+            assert!(adjacency::check_rule_scope_ok(&f.ajuz, *r));
+        }
     }
 }
 

@@ -30,12 +30,30 @@ fn all_circles_and_all_sixteen_usage_entries_compile_and_produce_checked_witness
             assert!(p.is_circle_bound());
             let mut boundaries = BTreeSet::new();
             for (f, form) in p.kernel().forms.iter().enumerate() {
-                let s: Vec<_> = form.sadr.iter().flat_map(|s| s.words[0].clone()).collect();
-                let a: Vec<_> = form.ajuz.iter().flat_map(|s| s.words[0].clone()).collect();
-                for (slots, input) in [(&form.sadr, &s), (&form.ajuz, &a)] {
-                    let c = watad_checker::language::recognize(slots, input).unwrap();
-                    assert!(watad_checker::language::check(slots, input, &c));
-                }
+                let source = &p.structured().forms[f];
+                let sadr_choices =
+                    watad_checker::expand::assignments(&source.sadr, &source.sadr_constraints);
+                let ajuz_choices = if source.ajuz.is_empty() {
+                    vec![Vec::new()]
+                } else {
+                    watad_checker::expand::assignments(&source.ajuz, &source.ajuz_constraints)
+                };
+                let Some(sadr_choice) = sadr_choices.first() else {
+                    continue;
+                };
+                let Some(ajuz_choice) = ajuz_choices.first() else {
+                    continue;
+                };
+                let s: Vec<_> = sadr_choice
+                    .iter()
+                    .enumerate()
+                    .flat_map(|(slot, choice)| beats(&form.sadr[slot].words[*choice]))
+                    .collect();
+                let a: Vec<_> = ajuz_choice
+                    .iter()
+                    .enumerate()
+                    .flat_map(|(slot, choice)| beats(&form.ajuz[slot].words[*choice]))
+                    .collect();
                 // Every branch gets local witness replay. Exercise the public
                 // profile boundary per distinct policy/layout combination,
                 // avoiding quadratic repeated whole-profile validation.
@@ -47,7 +65,6 @@ fn all_circles_and_all_sixteen_usage_entries_compile_and_produce_checked_witness
                 )) {
                     continue;
                 }
-                let (s, a) = (beats(&s), beats(&a));
                 let scope = Scope {
                     context: form.context,
                     initial: true,

@@ -12,6 +12,7 @@ extern crate alloc;
 pub mod adapter;
 pub mod adjacency;
 pub mod catalog;
+pub mod choice;
 pub mod expand;
 pub mod language;
 pub mod layout;

@@ -1,5 +1,6 @@
 //! Characterizes the selected convention; acceptance is not historical evidence.
 use std::collections::HashSet;
+use watad_checker::{choice, language::Step};
 
 use watad_daira::MeterName;
 use watad_lugha::{
@@ -32,37 +33,55 @@ fn ordinary_cross_boundary_retains_exact_unconstrained_recipe_product() {
     let bodies = ["/0/0//0", "//0//0", "/0/0//", "//0//"];
     assert_eq!(p.definition().forms.len(), p.structured().forms.len());
     let mut actual = HashSet::new();
-    for (definition, expanded) in p.definition().forms.iter().zip(&p.structured().forms) {
-        if definition.context != 0
-            || definition.sadr[0] != vec![vec![]]
-            || definition.ajuz[1] != vec![vec![]]
-        {
+    for (i, definition) in p.definition().forms.iter().enumerate() {
+        if definition.context != 0 {
             continue;
         }
-        assert_eq!(definition.sadr[1].len(), 1);
-        assert_eq!(definition.ajuz[0].len(), 1);
-        let arud = &definition.sadr[1][0];
-        let body = &definition.ajuz[0][0];
-        // Explicit identities matter: these reverse the within-half foot order.
-        assert_eq!(expanded.sadr[1].units, FootId::Failatun.units());
-        assert_eq!(expanded.ajuz[0].units, FootId::MustafIlunMafruq.units());
-        for (slot, base, recipe) in [
-            (&expanded.sadr[1], FootId::Failatun, arud),
-            (&expanded.ajuz[0], FootId::MustafIlunMafruq, body),
-        ] {
-            assert_eq!(slot.programs.len(), 1);
-            let expected = program::compile(base, recipe).unwrap();
-            let actual = &slot.programs[0];
-            assert_eq!(actual.scope, expected.scope);
-            assert_eq!(actual.required_final, expected.required_final);
-            assert_eq!(actual.actions, expected.actions);
-            assert_eq!(actual.expected, expected.expected);
-            assert_eq!(actual.suffix, expected.suffix);
+        let structured = &p.structured().forms[i];
+        let kernel = &p.kernel().forms[i];
+        let outer = definition.sadr[0].iter().position(Vec::is_empty).unwrap();
+        let end = definition.ajuz[1].iter().position(Vec::is_empty).unwrap();
+        assert_eq!(structured.sadr[1].units, FootId::Failatun.units());
+        assert_eq!(structured.ajuz[0].units, FootId::MustafIlunMafruq.units());
+        for (a, arud) in definition.sadr[1].iter().enumerate() {
+            for (b, body) in definition.ajuz[0].iter().enumerate() {
+                let steps = |x, y| {
+                    [
+                        Step {
+                            choice: x,
+                            start: 0,
+                            end: 0,
+                        },
+                        Step {
+                            choice: y,
+                            start: 0,
+                            end: 0,
+                        },
+                    ]
+                };
+                if !choice::check_rules(&kernel.sadr_rules, &steps(outer, a))
+                    || !choice::check_rules(&kernel.ajuz_rules, &steps(b, end))
+                {
+                    continue;
+                }
+                for (slot, base, recipe, index) in [
+                    (&structured.sadr[1], FootId::Failatun, arud, a),
+                    (&structured.ajuz[0], FootId::MustafIlunMafruq, body, b),
+                ] {
+                    let expected = program::compile(base, recipe).unwrap();
+                    let actual = &slot.programs[index];
+                    assert_eq!(actual.scope, expected.scope);
+                    assert_eq!(actual.required_final, expected.required_final);
+                    assert_eq!(actual.actions, expected.actions);
+                    assert_eq!(actual.expected, expected.expected);
+                    assert_eq!(actual.suffix, expected.suffix);
+                }
+                assert!(
+                    actual.insert((arud.clone(), body.clone())),
+                    "duplicate boundary assignment"
+                );
+            }
         }
-        assert!(
-            actual.insert((arud.clone(), body.clone())),
-            "duplicate boundary form"
-        );
     }
     let expected: HashSet<_> = recipes
         .iter()
@@ -85,8 +104,10 @@ fn ordinary_cross_boundary_retains_exact_unconstrained_recipe_product() {
             assert_eq!(certificate.profile, p.definition().id);
             assert_eq!(certificate.context, 0);
             let selected = &p.definition().forms[certificate.form];
-            assert_eq!(selected.sadr, vec![vec![vec![]], vec![recipes[a].clone()]]);
-            assert_eq!(selected.ajuz, vec![vec![recipes[b].clone()], vec![vec![]]]);
+            assert_eq!(selected.sadr[0][certificate.sadr[0].choice], vec![]);
+            assert_eq!(selected.sadr[1][certificate.sadr[1].choice], recipes[a]);
+            assert_eq!(selected.ajuz[0][certificate.ajuz[0].choice], recipes[b]);
+            assert_eq!(selected.ajuz[1][certificate.ajuz[1].choice], vec![]);
         }
     }
     // Includes arud Kaf -> initial Khabn (both adjacent sakin letters lost),

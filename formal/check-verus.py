@@ -78,6 +78,20 @@ def main():
              "--locked", "--offline"], env=test_env)
         if args.negative_control:
             controls = [
+                ("selected-adjacency", "choice.rs",
+                 "|| (r.left_deleted[l] && r.right_deleted[a])", "|| false"),
+                ("selected-choice-completeness", "choice.rs",
+                 "        c += 1;\n    }\n    None\n}\n\npub fn recognize",
+                 "        return None;\n    }\n    None\n}\n\npub fn recognize"),
+                ("source-rule-flags", "structured.rs",
+                 "out.push(programs[i].actions[letter] == m::Action::Delete);",
+                 "out.push(false);"),
+                ("verse-sadr-replay", "verse.rs",
+                 "&& choice::check(&f.sadr, &f.sadr_rules, sadr, &c.sadr)",
+                 "&& choice::check(&f.sadr, &[], sadr, &c.sadr)"),
+                ("verse-ajuz-replay", "verse.rs",
+                 "&& choice::check(&f.ajuz, &f.ajuz_rules, ajuz, &c.ajuz)",
+                 "&& choice::check(&f.ajuz, &[], ajuz, &c.ajuz)"),
                 ("certificate-profile", "verse.rs",
                  "if !validate(p) || c.profile != p.id || c.context != scope.context || c.form >= p.forms.len() {",
                  "if !validate(p) || c.profile != c.profile || c.context != scope.context || c.form >= p.forms.len() {"),

@@ -25,8 +25,49 @@ pub(crate) fn check_pair(p: &Program, q: &Program, l: usize, r: usize) -> (yes: 
         && !(p.actions[l] == Action::Delete && q.actions[r] == Action::Delete)
 }
 
+/// Every referenced slot and original-letter index exists. Conflicting
+/// alternatives are allowed here; selected-program compatibility is checked by
+/// `valid_rule` and `choice::permits`.
+pub open spec fn rule_scope_ok(slots: Seq<FootSlot>, rule: Rule) -> bool { rule.left < slots.len() && rule.right < slots.len()
+        && (forall|i: int| 0 <= i < slots[rule.left as int].programs@.len()
+            ==> rule.left_letter < slots[rule.left as int].programs@[i].actions@.len())
+        && (forall|j: int| 0 <= j < slots[rule.right as int].programs@.len()
+            ==> rule.right_letter < slots[rule.right as int].programs@[j].actions@.len())
+}
+
+pub fn check_rule_scope_ok(slots: &[FootSlot], rule: Rule) -> (yes: bool)
+    ensures yes == rule_scope_ok(slots@,rule),
+{
+    if rule.left >= slots.len() || rule.right >= slots.len() { return false; }
+    let left = &slots[rule.left].programs;
+    let right = &slots[rule.right].programs;
+    let mut i = 0;
+    while i < left.len()
+        invariant rule.left < slots.len(), rule.right < slots.len(),
+            left@ == slots@[rule.left as int].programs@,
+            i <= left.len(),
+            forall|a: int| 0 <= a < i ==> rule.left_letter < left@[a].actions@.len(),
+        decreases left.len()-i,
+    {
+        if rule.left_letter >= left[i].actions.len() { return false; }
+        i += 1;
+    }
+    let mut j = 0;
+    while j < right.len()
+        invariant rule.left < slots.len(), rule.right < slots.len(),
+            right@ == slots@[rule.right as int].programs@,
+            j <= right.len(),
+            forall|b: int| 0 <= b < j ==> rule.right_letter < right@[b].actions@.len(),
+        decreases right.len()-j,
+    {
+        if rule.right_letter >= right[j].actions.len() { return false; }
+        j += 1;
+    }
+    true
+}
+
 pub open spec fn valid_rule(slots: Seq<FootSlot>, rule: Rule) -> bool {
-    rule.left < slots.len() && rule.right < slots.len()
+    rule_scope_ok(slots,rule)
         && forall|i: int,j: int| 0 <= i < slots[rule.left as int].programs@.len()
             && 0 <= j < slots[rule.right as int].programs@.len() ==>
             compatible(&slots[rule.left as int].programs@[i],&slots[rule.right as int].programs@[j],rule.left_letter,rule.right_letter)
@@ -35,7 +76,7 @@ pub open spec fn valid_rule(slots: Seq<FootSlot>, rule: Rule) -> bool {
 fn check_rule(slots: &[FootSlot], rule: Rule) -> (yes: bool)
     ensures yes == valid_rule(slots@,rule),
 {
-    if rule.left >= slots.len() || rule.right >= slots.len() { return false; }
+    if !check_rule_scope_ok(slots,rule) { return false; }
     let left = &slots[rule.left].programs;
     let right = &slots[rule.right].programs;
     let mut i = 0;

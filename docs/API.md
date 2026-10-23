@@ -41,8 +41,11 @@ for any of the 22 rotations.
 `structured()` exposes original-base/program data; `kernel()` exposes the
 lowered finite language. `is_circle_bound()` reports circle-origin binding.
 
-Circle profiles use family `1000 + meter.id()`; usage profiles use
-`2000 + meter.id()`. Both have revision `1`. IDs label definitions; they are
+Circle profiles use family `1000 + meter.id()` with revision `1`; usage profiles
+use `2000 + meter.id()`. The compact Madid, Wafir, Ramal, Khafif and Mujtath
+profiles use revision `2`; other built-in usage profiles retain revision `1`.
+The revision changes identify changed form/choice certificate coordinates.
+IDs label definitions; they are
 not hashes, authentication, or substitutes for the actual profile data.
 See [coverage and conventions](../spec/profiles/classical-v1.md).
 
@@ -113,6 +116,14 @@ darb classes, original-letter exclusions and sadr/ajuz recipe alternatives.
 `MeterProfile::new` validates provenance, layout, recipes, requirements and
 structured validity, then binds original feet to the selected circle sequence.
 Equal-surface feet cannot substitute for different structural ownership.
+
+Forms retain per-foot alternatives and original-letter exclusion rules without
+enumerating their complete verse products. Slot and original-letter indices in
+`watad_checker::adjacency::Rule` are zero-based. Rule references must be valid
+for every candidate program. A declared rule forbids selecting the two named
+deletions together; it does not forbid storing those alternatives in the same
+form. Recognition and certificate replay both check the selected combination.
+The lowered kernel retains corresponding per-alternative deletion flags.
 
 Each requirement group names source-form indices and requires a selected form
 from that group somewhere in the poem. `FixedDarbClass` requires a common

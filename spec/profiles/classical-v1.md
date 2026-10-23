@@ -9,8 +9,10 @@ all mechanically possible edits with attested Arabic poetry.
 
 - Circle IDs: family `1000 + MeterName::id()`, revision 1. All 22 rotations use
   their complete circle-derived foot sequence without transformations.
-- Usage IDs: family `2000 + MeterName::id()`, revision 1. All sixteen used meters
-  have explicit retained-foot layouts, terminal pairs and body alternatives.
+- Usage IDs: family `2000 + MeterName::id()`. Madid, Wafir, Ramal, Khafif and
+  Mujtath use revision 2 because their certificate coordinates changed; other
+  usage profiles retain revision 1. All sixteen used meters have explicit
+  retained-foot layouts, terminal pairs and body alternatives.
 - The `1:1` restricted Hazaj test fixture describes a separate, narrower
   language. An ID never substitutes for an externally supplied definition.
 - The six unused rotations have circle scope, with no invented usage language.
@@ -69,9 +71,14 @@ ownership check even when composed with an illa.
 
 Madid, Ramal, Khafif and Mujtath use explicit within-hemistich mu'aqabah exclusions:
 Kaf of the preceding foot cannot coexist with Khabn of the following foot.
-Source expansion produces correlated branches; the checked lowering boundary
-independently checks *every* alternative pair against the declared original-letter
-exclusion. Branch expansion cannot silently bypass the restriction.
+Production retains compact source rows and compiles the original-letter rules
+into per-alternative deletion flags. Recognition and replay check the selected
+programs; conflicting unselected alternatives may coexist in a source form.
+Madid, Ramal, Khafif and Mujtath retain 12, 12, 10 and 2 rows respectively.
+Wafir retains 8 after removing exact duplicate tasri rows with the same witness
+memberships. The complete catalog has 147 rows; row counts are not counts of
+distinct beat patterns. Reference expansion remains an independent finite
+language oracle.
 
 For Mujtath, al-Qistas additionally conditions Kaf of Failatun on preservation
 of the preceding MustafIlunMafruq sin (original letter two). The strict profile
