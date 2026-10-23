@@ -41,44 +41,44 @@ Let `B = {0,1}`. A **beat word** is a nonempty finite sequence `w ∈ B+`, where
 `1` is moving and `0` is still. A compiled **slot** is a finite nonempty list of
 alternative words:
 
-$$
+```math
 S = (w_0,\ldots,w_{m-1}), \qquad m>0,\quad w_j\in B+.
-$$
+```
 
-A **half-form** is a finite sequence of slots `H = (S_0,\ldots,S_{n-1})`.
+A **half-form** is a finite sequence of slots $`H = (S_0,\ldots,S_{n-1})`$.
 A **form** contains a context label, an initial-only flag, a darb class, a sadr
 half, an ajuz half (possibly absent), and two lists of adjacency rules:
 
-$$
+```math
 F = (\mathit{context},\mathit{initial},c,H_{\mathrm{sadr}},H_{\mathrm{ajuz}},
      R_{\mathrm{sadr}},R_{\mathrm{ajuz}}).
-$$
+```
 
 A **profile** is
 
-$$
+```math
 P = (\mathit{id},\mathit{binding},(F_0,\ldots,F_{k-1})),
 \qquad k>0,
-$$
+```
 
 with nonzero family and revision in `id`. A **requirement system** is a finite
 list of finite index groups:
 
-$$
+```math
 \mathit{Req} = (G_0,\ldots,G_{r-1}), \qquad G_g\subseteq\{0,\ldots,k-1\}.
-$$
+```
 
 A **certificate** for one verse is
 
-$$
+```math
 C = (\mathit{profile},\mathit{context},f,\mathit{sadrSteps},\mathit{ajuzSteps}),
-$$
+```
 
 where each step is a triple `(choice,start,end)`. The profile and context in the
 certificate are claims to be checked, not authorities chosen by the certificate.
 
 A **poem** is a nonempty finite sequence of verse inputs
-`I_0,\ldots,I_{q-1}`. Each input supplies a context, sadr beats and ajuz beats.
+$`I_0,\ldots,I_{q-1}`$. Each input supplies a context, sadr beats and ajuz beats.
 
 ## 3. Typed units, circle origins and layout
 
@@ -97,14 +97,14 @@ distinct Rust/Verus enums, not tags on a beat string. `Unit` is exactly
 The four primitive words are declared once in `unit_atoms!`, which generates
 both the executable `beats` method and the specification `beat_spec`:
 
-$$
+```math
 \begin{aligned}
 \mathsf{Sabab.Khafif} &= \texttt{/0},&
 \mathsf{Sabab.Thaqil} &= \texttt{//},\\
 \mathsf{Watad.Majmu} &= \texttt{//0},&
 \mathsf{Watad.Mafruq} &= \texttt{/0/}.
 \end{aligned}
-$$
+```
 
 The checked contract on `Sabab::beats`, `Watad::beats` and `Unit::beats` is
 that the returned slice equals the corresponding `beat_spec`, with length
@@ -116,11 +116,11 @@ tests check the intended renderings.
 The typed unit word of a unit is `beat_spec`. `watad_count` counts
 `Unit::Watad` values, and `has_exactly_one_watad(units)` has the contract
 
-$$
+```math
 \mathsf{hasExactlyOneWatad}(u)
 \iff
 \mathsf{watadCount}(u,|u|)=1.
-$$
+```
 
 This counts typed watads, not occurrences of the substring `//0` in a beat
 string.
@@ -128,35 +128,35 @@ string.
 ### 3.2 Named feet as derived circle windows
 
 The five circle seeds are declared in `circle_seeds!`; `circle_word_spec(i)`
-returns seed $i$ for $i<5$, and `circle_word(i)` has the contract that its
+returns seed $`i`$ for $`i<5`$, and `circle_word(i)` has the contract that its
 slice equals that specification and has length 2 to 9. `FOOT_AT` is the only
 name-to-position table. For an attestation tuple
-$a=(c,r,o,\ell)$, the derived typed window is
+$`a=(c,r,o,\ell)`$, the derived typed window is
 
-$$
+```math
 \mathsf{windowWord}(a)[j]
 =
 \mathsf{circleWordSpec}(c)[(o+j+r)\bmod |\mathsf{circleWordSpec}(c)|]
 \quad(0\le j<\ell).
-$$
+```
 
-`foot_window(a)` requires $c<5$, $r<9$, $o\le 6$, $\ell\le 3$, and
-returns exactly this window with true length $\ell$. `derive_foot_units`
+`foot_window(a)` requires $`c<5`$, $`r<9`$, $`o\le 6`$, $`\ell\le 3`$, and
+returns exactly this window with true length $`\ell`$. `derive_foot_units`
 requires the same bounds for every entry of `FOOT_AT` and ensures, for every
-$k<11$,
+$`k<11`$,
 
-$$
+```math
 \mathsf{table}[k].1=\mathsf{FOOT\_AT}[k].3
 \land
 \mathsf{table}[k].0[0..\mathsf{table}[k].1]
 =\mathsf{windowWord}(\mathsf{FOOT\_AT}[k]).
-$$
+```
 
 `FootId::word_spec` is defined as
-$\mathsf{windowWord}(\mathsf{FOOT\_AT}[f])$; it is not a second table.
+$`\mathsf{windowWord}(\mathsf{FOOT\_AT}[f])`$; it is not a second table.
 `FootId::one_watad` proves, separately for all eleven variants, that
 `watad_count(word_spec, |word_spec|) = 1`. `FootId::pattern` returns the same
-window with length in $2..3$, the same `word_spec`, and exactly one watad.
+window with length in $`2..3`$, the same `word_spec`, and exactly one watad.
 
 The ordinary const function `foot_derivation_sane` additionally checks that the
 eleven derived typed windows are pairwise distinct, have length 2 or 3, and
@@ -168,8 +168,9 @@ historically correct.
 
 ### 3.3 Rotation, permutation, composition and repetition
 
-For a typed word $w$ of length $n$, define
-$$
+For a typed word $`w`$ of length $`n`$, define
+
+```math
 \mathsf{index}(n,r,i)=
 \begin{cases}
 r+i & i<n-r,\\
@@ -177,55 +178,66 @@ i-(n-r) & \text{otherwise},
 \end{cases}
 \qquad
 \mathsf{rotated}(w,r)[i]=w[\mathsf{index}(|w|,r,i)].
-$$
-`rotate` requires no precondition and returns `None` unless $w$ is nonempty,
-$r<|w|$ and $|w|\le\mathit{CAP}$; on success it returns exactly
+```
+
+`rotate` requires no precondition and returns `None` unless $`w`$ is nonempty,
+$`r<|w|`$ and $`|w|\le\mathit{CAP}`$; on success it returns exactly
 `rotated(w,r)` and the true length. Invalid bounds or capacity are explicit
 `None`, not truncation.
 
 The checked rotation facts are:
 
-- `permutation(n,r,i,j)` requires $n>0$, $0\le r<n$, $0\le i,j<n$. It
-  ensures $0\le\mathsf{index}(n,r,i)<n$,
-  $\mathsf{index}(n,r,i)=\mathsf{index}(n,r,j)\iff i=j$, and the inverse
-  identity $\mathsf{index}(n,n-r,\mathsf{index}(n,r,i))=i$ (with $n-r$
-  normalized to 0 when $r=0$).
-- `identity(w)` ensures `rotated(w,0) = w`.
-- `composition(w,a,b)` requires $|w|>0$ and $0\le a,b<|w|$. It ensures
-  \[
-  \mathsf{rotated}(\mathsf{rotated}(w,a),b)
-  =
-  \mathsf{rotated}(w,(a+b)\bmod |w|).
-  \]
-  This is two-fold cyclic addition; general associativity or multi-fold
-  composition is not a separate theorem.
-- `repeated(w,k)` is empty when $w$ is empty or $k=0$; otherwise it has
-  length $|w|k$ and repeats $w$ by index modulo $|w|$. `repeat` returns
-  `None` exactly when $|w|k>\mathit{CAP}$ (including checked multiplication
-  failure), and on success returns exactly `repeated(w,k)`.
+**Permutation.** `permutation(n,r,i,j)` requires $`n>0`$, $`0\le r<n`$, $`0\le i,j<n`$. It
+ensures $`0\le\mathsf{index}(n,r,i)<n`$,
+$`\mathsf{index}(n,r,i)=\mathsf{index}(n,r,j)\iff i=j`$, and the inverse
+identity $`\mathsf{index}(n,n-r,\mathsf{index}(n,r,i))=i`$ (with $`n-r`$
+normalized to 0 when $`r=0`$).
+
+**Identity.** `identity(w)` ensures `rotated(w,0) = w`.
+
+**Composition.** `composition(w,a,b)` requires $`|w|>0`$ and $`0\le a,b<|w|`$. It ensures
+
+```math
+\mathsf{rotated}(\mathsf{rotated}(w,a),b)
+=
+\mathsf{rotated}(w,(a+b)\bmod |w|).
+```
+
+This is two-fold cyclic addition; general associativity or multi-fold
+composition is not a separate theorem.
+
+**Repetition.** `repeated(w,k)` is empty when $`w`$ is empty or $`k=0`$; otherwise it has
+length $`|w|k`$ and repeats $`w`$ by index modulo $`|w|`$. `repeat` returns
+`None` exactly when $`|w|k>\mathit{CAP}`$ (including checked multiplication
+failure), and on success returns exactly `repeated(w,k)`.
+
 
 The total specification `rotated` has no range precondition; the theorems above
 supply the needed bounds. `rotate` is the checked executable boundary.
 
 ### 3.4 Primitive and disjoint typed rotations
 
-`circle_theorems::primitive(c,a,b)` requires $c<5$ and
-$a,b<|\mathsf{circleWordSpec}(c)|$. It ensures
-$$
+`circle_theorems::primitive(c,a,b)` requires $`c<5`$ and
+$`a,b<|\mathsf{circleWordSpec}(c)|`$. It ensures
+
+```math
 \mathsf{rotated}(\mathsf{circleWordSpec}(c),a)
 =
 \mathsf{rotated}(\mathsf{circleWordSpec}(c),b)
 \Longrightarrow a=b.
-$$
+```
+
 Thus each circle has exactly its period many distinct typed rotations.
 
-`circle_theorems::disjoint(c,d,a,b)` requires $c<5$, $d<5$, $c\ne d$,
-$a<|\mathsf{circleWordSpec}(c)|$ and
-$b<|\mathsf{circleWordSpec}(d)|$. It ensures the two typed rotations are
+`circle_theorems::disjoint(c,d,a,b)` requires $`c<5`$, $`d<5`$, $`c\ne d`$,
+$`a<|\mathsf{circleWordSpec}(c)|`$ and
+$`b<|\mathsf{circleWordSpec}(d)|`$. It ensures the two typed rotations are
 unequal. `circle_theorems::twenty_two()` ensures
-$$
+
+```math
 \sum_{c=0}^{4}|\mathsf{circleWordSpec}(c)|=22.
-$$
+```
+
 Together these three Verus lemmas give 22 pairwise distinct **typed**
 rotations. There is no single theorem with that name, and the proofs compare
 positions up to index 8; extending the seed lengths would require revisiting
@@ -239,9 +251,11 @@ compile-time checks over the actual tables, not Verus proofs. `theorem2` compare
 
 Typed disjointness does **not** imply disjointness of rendered beat strings.
 For example, the typed sequences
-$$
+
+```math
 [\mathsf{S},\mathsf{W}] \quad\text{and}\quad [\mathsf{M},\mathsf{S}]
-$$
+```
+
 both render as `/0//0`. Likewise `MustafIlun` (`SSW`) and
 `MustafIlunMafruq` (`SMS`) share `/0/0//0`, and `Failatun` (`SWS`) and
 `FailatunMafruq` (`MSS`) share `/0//0/0`. The circle theorems deliberately
@@ -252,14 +266,17 @@ not claim it as one.
 
 ### 3.5 Layout tiling and basis binding
 
-For a circle word $w$, rotation $r$, repetitions $k$, and foot sequence
-$F$, define
-$$
+For a circle word $`w`$, rotation $`r`$, repetitions $`k`$, and foot sequence
+$`F`$, define
+
+```math
 \mathsf{expected}(w,r,k)=\mathsf{repeated}(\mathsf{rotated}(w,r),k).
-$$
+```
+
 `layout::tiling(input,feet,i,at)` requires the remaining foot words to cover the
 suffix exactly:
-$$
+
+```math
 \begin{cases}
 \bot & i<0 \lor i>|feet| \lor at<0 \lor at>|input|,\\
 at=|input| & i=|feet|,\\
@@ -268,36 +285,38 @@ at=|input| & i=|feet|,\\
 \mathsf{tiling}(input,feet,i+1,at+|feet[i].word\_spec|)
 & i<|feet|.
 \end{cases}
-$$
-`layout::valid(circle,rot,reps,feet)` requires $circle<5$,
-$rot<|\mathsf{circleWordSpec}(circle)|$,
-$reps>0$, $|\mathsf{circleWordSpec}(circle)|\cdot reps\le
-\mathtt{usize::MAX}$, and
-$\mathsf{tiling}(\mathsf{expected}(\mathsf{circleWordSpec}(circle),rot,reps),
-feet,0,0)$. `layout::check` returns exactly this predicate and uses checked
+```
+
+`layout::valid(circle,rot,reps,feet)` requires $`circle<5`$,
+$`rot<|\mathsf{circleWordSpec}(circle)|`$,
+$`reps>0`$, $`|\mathsf{circleWordSpec}(circle)|\cdot reps\le \mathtt{usize::MAX}`$, and
+$`\mathsf{tiling}(\mathsf{expected}(\mathsf{circleWordSpec}(circle),rot,reps), feet,0,0)`$. `layout::check` returns exactly this predicate and uses checked
 multiplication. This is exact typed-unit tiling: full coverage, no gaps, ending
 at the input length. It does not require distinct foot ids or a unique tiling;
 the daira generator is the untrusted chooser of a tiling.
 
 A circle-bound profile additionally binds the source slots to the chosen feet.
-For a slot sequence $S$ and feet $F$,
-$$
+For a slot sequence $`S`$ and feet $`F`$,
+
+```math
 \mathsf{halfBound}(S,F)
 \iff
 |S|\le |F|
 \land
 \forall i<|S|:\;S[i].\mathit{units}=F[i].\mathit{word\_spec}.
-$$
-$$
+```
+
+```math
 \mathsf{basisBound}(P,F)
 \iff
 \forall i<|P.\mathit{forms}|:\;
 \mathsf{halfBound}(P.\mathit{forms}[i].\mathit{sadr},F)
 \land
 \mathsf{halfBound}(P.\mathit{forms}[i].\mathit{ajuz},F).
-$$
+```
+
 `check_half` and `check_basis` return exactly these predicates. The binding is
-prefix-only ($|S|\le|F|$) and vacuous for empty slots; trailing feet beyond
+prefix-only ($`|S|\le|F|`$) and vacuous for empty slots; trailing feet beyond
 the retained source slots are not constrained by `basisBound`. `Profile::new`
 sets `origin=None`; `new_bound` requires both `layout::valid` and
 `basisBound`, and the `Profile` type invariant permanently records them for a
@@ -309,17 +328,20 @@ the attested base.
 
 Expansion assigns every letter its original unit owner, offset and a
 `Letter.sabab` flag:
-$$
+
+```math
 \mathsf{unitLetters}(u,o)[j]
 =
 (\mathsf{unitWord}(u)[j],o,j,\mathsf{isSabab}(u)).
-$$
+```
+
 `expanded(units,n)` concatenates these letter sequences in original unit order.
 It is not a beat-string split: equal surface strings with different unit
 structure have different ownership.
 
 `change_valid(letter,action,expected,scope)` is:
-$$
+
+```math
 \begin{aligned}
 &\mathsf{action}=\mathsf{Keep} \lor \bigl(
 \mathsf{expected}=\mathsf{letter.beat}
@@ -328,7 +350,8 @@ $$
 (\mathsf{scope}\ne\mathsf{Zihaf}
 \lor(\mathsf{letter.sabab}\land\mathsf{letter.offset}=1))\bigr).
 \end{aligned}
-$$
+```
+
 `eligible(program,position)` is the separate scope gate: `Zihaf` requires an
 empty suffix; `Terminal` requires a terminal position; `Initial` requires an
 initial position and empty suffix; `Licensed` adds no further restriction.
@@ -339,17 +362,19 @@ letter length, every `change_valid`, and suffix entries at most 1.
 `changed(letters,actions,n)` applies the actions in original order: `Keep` emits
 the original beat, `Delete` emits nothing, `Silence` emits 0. `apply` returns
 `Err` only when `valid` fails; on `Ok` it returns exactly
-$$
+
+```math
 \mathsf{changed}\bigl(\mathsf{expanded}(units,|units|),actions,|actions|\bigr)
 +\mathit{suffix}.
-$$
+```
+
 Earlier deletions never shift the coordinate of a later action. This is why a
 normalizer cannot implement a later edit by indexing the already-shortened
 surface string.
 
 `watad_is_protected(units,p,position,i)` requires `valid(units,p,position)`,
-`p.scope == Zihaf`, $0\le i<|\mathsf{expanded}(units,|units|)|$, and
-$\neg\mathsf{expanded}(units,|units|)[i].\mathit{sabab}$. It ensures
+`p.scope == Zihaf`, $`0\le i<|\mathsf{expanded}(units,|units|)|`$, and
+$`\neg\mathsf{expanded}(units,|units|)[i].\mathit{sabab}`$. It ensures
 `p.actions[i] == Keep`. Under the current `Unit` type, a non-sabab letter is
 exactly a letter owned by a `Watad`; the theorem does not extend to `Licensed`
 or other scopes. It is a statement about the checked program, not about a
@@ -362,14 +387,14 @@ historical permission.
 A source program `p` has a sequence of actions, one per original letter. The
 primitive compatibility relation is
 
-$$
+```math
 \mathsf{compatible}(p,q,l,r)
 \iff
 l<|p.\mathit{actions}| \;\land\; r<|q.\mathit{actions}|
 \;\land\;
 \neg\bigl(p.\mathit{actions}[l]=\mathsf{Delete}
 \land q.\mathit{actions}[r]=\mathsf{Delete}\bigr).
-$$
+```
 
 This is deliberately directional. It says only that the named deletion in the
 left program and the named deletion in the right program do not coexist. It does
@@ -378,7 +403,7 @@ not invent a converse rule.
 A rule is `Rule { left, right, left_letter, right_letter }`. Its scope condition
 is
 
-$$
+```math
 \mathsf{ruleScopeOk}(H,R)
 \iff
 R.\mathit{left}<|H| \land R.\mathit{right}<|H|
@@ -386,11 +411,11 @@ R.\mathit{left}<|H| \land R.\mathit{right}<|H|
   R.\mathit{leftLetter}<|H[R.\mathit{left}].\mathit{programs}[i].\mathit{actions}|\bigr)
 \land \bigl(\forall j<|H[R.\mathit{right}].\mathit{programs}|:\;
   R.\mathit{rightLetter}<|H[R.\mathit{right}].\mathit{programs}[j].\mathit{actions}|\bigr).
-$$
+```
 
 The all-pairs source predicate is
 
-$$
+```math
 \mathsf{validRule}(H,R)
 \iff
 \mathsf{ruleScopeOk}(H,R)
@@ -399,7 +424,7 @@ $$
 \mathsf{compatible}\bigl(H[R.\mathit{left}].\mathit{programs}[i],
 H[R.\mathit{right}].\mathit{programs}[j],
 R.\mathit{leftLetter},R.\mathit{rightLetter}\bigr).
-$$
+```
 
 `adjacency::valid` is the conjunction of `validRule` over a rule list. This is
 the reference-expander check: every alternative in the left slot is compatible
@@ -410,7 +435,7 @@ with every alternative in the right slot.
 Production does not expand all alternatives. For a program list `programs` and
 an original-letter index `letter`, the compact flag vector is
 
-$$
+```math
 \begin{aligned}
 \mathsf{deletionFlags}(\mathit{programs},\mathit{letter})[i]
 \iff{}&
@@ -418,11 +443,11 @@ $$
 &\land\mathit{programs}[i].\mathit{actions}[\mathit{letter}]
 =\mathsf{Delete}.
 \end{aligned}
-$$
+```
 
 A compact rule stores the two flag vectors. The compiled correspondence is
 
-$$
+```math
 \mathsf{compiledRule}(H,R,C)
 \iff
 R.\mathit{left}<|H|\land R.\mathit{right}<|H|
@@ -432,22 +457,24 @@ R.\mathit{left}<|H|\land R.\mathit{right}<|H|
 =\mathsf{deletionFlags}(H[R.\mathit{left}].\mathit{programs},R.\mathit{leftLetter})
 \land C.\mathit{rightDeleted}
 =\mathsf{deletionFlags}(H[R.\mathit{right}].\mathit{programs},R.\mathit{rightLetter}).
-$$
+```
 
 `structured::compiled_rules` additionally requires the source and compact rule
 lists to have the same length:
-$$
+
+```math
 \mathsf{compiledRules}(H,Rs,Cs)
 \iff
 |Rs|=|Cs|
 \land\forall k<|Rs|:\;\mathsf{compiledRule}(H,Rs[k],Cs[k]).
-$$
+```
+
 The key point is that the flags are indexed by **source alternative**, not by
 surface word. Two alternatives with the same beat word remain distinct.
 
 A selected step sequence `steps` satisfies one compact rule exactly when
 
-$$
+```math
 \mathsf{permitsRule}(C,\mathit{steps})
 \iff
 C.\mathit{left}<|\mathit{steps}|
@@ -460,7 +487,7 @@ C.\mathit{leftDeleted}[\mathit{steps}[C.\mathit{left}].\mathit{choice}]
 \land
 C.\mathit{rightDeleted}[\mathit{steps}[C.\mathit{right}].\mathit{choice}]
 \bigr).
-$$
+```
 
 `choice::permits` conjoins this over all rules. This is the selected-path
 semantics: conflicting unselected alternatives may remain in the same slot.
@@ -470,9 +497,9 @@ semantics: conflicting unselected alternatives may remain in the same slot.
 The source-to-compact bridge is not an axiom. `structured::compile_deletion_flags`
 has the contract
 
-$$
+```math
 \mathsf{out}=\mathsf{deletionFlags}(\mathit{programs},\mathit{letter}),
-$$
+```
 
 and `structured::compile_rule` returns a compact rule only when
 `ruleScopeOk` holds, with the exact flag vectors. `structured::compile_rules`
@@ -482,11 +509,11 @@ compiled profile from source scope and the compiled correspondence.
 
 The theorem `structured::projection_equivalent` states
 
-$$
+```math
 \mathsf{valid}_{\mathrm{structured}}(P_{\mathrm{source}})
 \iff
 \mathsf{valid}_{\mathrm{verse}}(P_{\mathrm{lowered}})
-$$
+```
 
 under `projected(P_source,P_lowered)`. Here the source is the **unexpanded**
 `structured::Profile` of source forms, source slots, source programs and source
@@ -526,14 +553,14 @@ their finite cases; they do not replace a general theorem.
 
 The named normalizer is separate from the compact language. Its key contract is
 
-$$
+```math
 \mathsf{normalizeSpec}(\mathit{base},\mathit{changes})
 =\mathsf{Ok}(\mathsf{programView}(p))
 \land
 \mathsf{eligible}(p,\mathit{position})
 \Longrightarrow
 \mathsf{valid}(\mathit{base}.\mathit{word},p,\mathit{position}).
-$$
+```
 
 The executable normalizer constructs simultaneous actions in **original
 coordinates**. An action is `Keep`, `Delete` or `Silence`, and an optional suffix
@@ -542,14 +569,14 @@ deletion at letter 2 does not shift the target of a later edit at letter 4.
 
 The lowering used by compact profiles is `structured::compile`:
 
-$$
+```math
 \mathsf{output}(S,i)
 =
 \mathsf{changed}\bigl(
 \mathsf{expanded}(S.\mathit{units},|S.\mathit{units}|),
 p_i.\mathit{actions},|p_i.\mathit{actions}|\bigr)
 +\;p_i.\mathit{suffix}.
-$$
+```
 
 The contract says that a successful compile produces one output word per source
 program, in source order, with exactly this output; an invalid program rejects
@@ -560,18 +587,18 @@ distinct alternatives with equal surfaces survive lowering.
 
 For an input sequence `x` and a word `w`, the prefix relation is
 
-$$
+```math
 \mathsf{prefix}(x,\mathit{at},w)
 \iff
 0\le \mathit{at}\le |x|
 \land \mathit{at}+|w|\le |x|
 \land \forall j<|w|:\; w[j]=x[\mathit{at}+j].
-$$
+```
 
 A span step is `(choice,start,end)`. All guards are stated before the cases,
 so a trace cannot carry surplus or missing steps:
 
-$$
+```math
 \mathsf{trace}(H,x,i,\mathit{at},\mathit{steps})
 \iff
 \begin{cases}
@@ -594,7 +621,7 @@ $$
 \end{aligned}
 & i<|H|.
 \end{cases}
-$$
+```
 
 At termination the length guard already forces `steps` to be empty; the base
 case checks the input end. In the recursive case the choice is in range, the
@@ -606,11 +633,11 @@ The certificate checker `language::check` returns exactly this relation. It does
 not repair intervals, skip a slot, accept a prefix of the input, or ignore extra
 steps. The recursive recognizer `language::recognize_from` has the contract
 
-$$
+```math
 \mathsf{answer}\ne\mathsf{None}
 \iff
 \mathsf{derives}(H,x,i,\mathit{at}),
-$$
+```
 
 and on success returns a trace. The loop invariant records that every earlier
 alternative was tried and failed; the recursive call covers the remaining slots.
@@ -619,12 +646,12 @@ no search budget or truncation.
 
 The compact rule layer adds `choice::permits` to the trace:
 
-$$
+```math
 \mathsf{choiceTrace}(H,R,x,\mathit{steps})
 \iff
 \mathsf{trace}(H,x,0,0,\mathit{steps})
 \land \mathsf{permits}(R,\mathit{steps}).
-$$
+```
 
 `choice::check` returns exactly this predicate. The independent derivation
 relation `choice::derives_from` existentially chooses one alternative per slot,
@@ -638,7 +665,7 @@ This is the formal core of “certificate replay is separate from acceptance.”
 A scope is `(context, initial)`. A certificate is legal for a profile `P`, scope
 `scope`, and input halves when
 
-$$
+```math
 \mathsf{legal}(P,\mathit{scope},\mathit{sadr},\mathit{ajuz},C)
 \iff
 \begin{aligned}
@@ -654,7 +681,7 @@ $$
 &\land \mathsf{choiceTrace}(P.\mathit{forms}[C.\mathit{form}].\mathit{ajuz},
        P.\mathit{forms}[C.\mathit{form}].\mathit{ajuzRules},\mathit{ajuz},C.\mathit{ajuz}).
 \end{aligned}
-$$
+```
 
 The certificate carries its own profile id and context, but `verse::check` does
 not trust them: it compares them with the externally selected profile and scope,
@@ -663,7 +690,7 @@ half traces under the actual rules.
 
 The verse derivation relation is
 
-$$
+```math
 \mathsf{verseDerives}(P,\mathit{scope},\mathit{sadr},\mathit{ajuz},\mathit{filter})
 \iff
 \mathsf{valid}(P)
@@ -673,7 +700,7 @@ P.\mathit{forms}[f].\mathit{context}=\mathit{scope}.\mathit{context}
 \land \mathsf{classMatches}(P.\mathit{forms}[f].\mathit{class},\mathit{filter})
 \land \mathsf{choiceDerives}(P.\mathit{forms}[f].\mathit{sadr},\ldots,\mathit{sadr})
 \land \mathsf{choiceDerives}(P.\mathit{forms}[f].\mathit{ajuz},\ldots,\mathit{ajuz}).
-$$
+```
 
 `verse::recognize_form` returns `Some` exactly when the form-specific derivation
 holds, and every returned certificate is legal. `verse::certificate_derives`
@@ -684,9 +711,9 @@ an invalid profile is never reported as a negative recognition result.
 ## 8. Poem semantics
 
 A poem input is a finite nonempty sequence of verse inputs. For a fixed form
-index $f$, define
+index $`f`$, define
 
-$$
+```math
 \begin{aligned}
 &\mathsf{formDerives}(P,\mathit{scope},\mathit{sadr},\mathit{ajuz},f)
 \iff
@@ -698,17 +725,17 @@ $$
 &\quad\land \mathsf{choiceDerives}(P.\mathit{forms}[f].\mathit{sadr},\ldots,\mathit{sadr})
 \land \mathsf{choiceDerives}(P.\mathit{forms}[f].\mathit{ajuz},\ldots,\mathit{ajuz}).
 \end{aligned}
-$$
+```
 
 This is `verse::form_derives`. It fixes the form and has **no** class-filter
 parameter. `verse::derives(...,filter)` is a different existential relation that
 chooses the form itself and applies `class_matches` inside that existential; it
-is not used with a separately recorded $f$.
+is not used with a separately recorded $`f`$.
 
 The poem derivation relation is recursive over the input sequence and carries
 the whole prefix history:
 
-$$
+```math
 \mathsf{poemDerives}(P,I,\mathit{Req},\mathit{at},\mathit{filter},\mathit{selected})
 \iff
 \begin{cases}
@@ -723,14 +750,14 @@ I[\mathit{at}].\mathit{ajuz},f)\\
 \mathsf{nextFilter}(P,\mathit{filter},f),\mathit{selected}\cdot f)
 & \mathit{at}<|I|.
 \end{cases}
-$$
+```
 
 The class filter is the mechanism for whole-poem darb-class binding. For
 `FixedDarbClass`, the first selected form sets the filter and every later form
 must match it. For `Unconstrained`, the filter remains `None`. This is captured
 by
 
-$$
+```math
 \mathsf{nextFilter}(P,\mathit{filter},f)
 =
 \begin{cases}
@@ -738,24 +765,24 @@ $$
 & P.\mathit{binding}=\mathsf{FixedDarbClass}\land \mathit{filter}=\mathsf{None},\\
 \mathit{filter} & \text{otherwise}.
 \end{cases}
-$$
+```
 
 A requirement system is satisfied when every group contains at least one selected
 form index:
 
-$$
+```math
 \mathsf{satisfied}(\mathit{Req},\mathit{selected})
 \iff
 \forall g<|\mathit{Req}|:\;
 \exists i<|\mathit{Req}[g]|:\;
 \mathit{Req}[g][i]\in\mathit{selected}.
-$$
+```
 
 The poem certificate trace requires one legal certificate per verse, the same
 class discipline, and the same requirement satisfaction. The search function has
 the contract
 
-$$
+```math
 \mathsf{valid}(P)\land 0\le \mathit{at}\le|I|
 \Longrightarrow
 \Bigl(
@@ -764,16 +791,18 @@ $$
 \iff
 \mathsf{poemDerives}(P,I,\mathit{Req},\mathit{at},\mathit{filter},\mathit{selected})
 \Bigr).
-$$
+```
+
 Separately, under the same preconditions, every returned certificate satisfies
 the trace relation:
-$$
+
+```math
 \forall C:\;
 \mathsf{search}(P,I,\mathit{Req},\mathit{at},\mathit{filter},\mathit{selected})
 =\mathsf{Some}(C)
 \Longrightarrow
 \mathsf{trace}(P,I,\mathit{Req},\mathit{at},\mathit{filter},\mathit{selected},C).
-$$
+```
 
 The loop invariant records that every earlier form index was tried and failed;
 on success the result is a trace. `obligations::trace_is_derivation` proves that
@@ -859,9 +888,9 @@ claim that every accepted profile has a satisfiable required path.
 Consider Madid form 0, context 0, three retained feet in the sadr. Its first
 source rule is
 
-$$
+```math
 R = (\mathit{left}=0,\mathit{leftLetter}=6,\mathit{right}=1,\mathit{rightLetter}=1),
-$$
+```
 
 using zero-based letter coordinates: original letter 7 of foot 0 and original
 letter 2 of foot 1. In the traditional terminology, this is the within-hemistich
@@ -870,9 +899,9 @@ following foot.”
 
 A legal unchanged path is choices `[0,0,0]`. Its sadr beats are
 
-$$
+```math
 \underbrace{/0//0/0}_{7}\;\underbrace{/0//0}_{5}\;\underbrace{/0//0/0}_{7},
-$$
+```
 
 with spans `[0,7)`, `[7,12)`, `[12,19)`. The same form's unchanged ajuz path is
 also `/0//0/0 /0//0 /0//0/0` (the CLI prints the concatenated sadr
@@ -886,9 +915,9 @@ A source path that violates only `R` is choices `[2,1,0]`:
 
 Its sadr beats are
 
-$$
+```math
 \underbrace{/0//0/}_{6}\;\underbrace{///0}_{4}\;\underbrace{/0//0/0}_{7},
-$$
+```
 
 with spans `[0,6)`, `[6,10)`, `[10,17)`. This is a well-formed source path, but
 it is not a permitted derivation because both deletions named by `R` occur on
@@ -900,24 +929,24 @@ Take the illegal path above and its exact spans. Let `slots` be the lowered sadr
 slots, `x` the 17-beat input, and `steps` the three spans. The unconstrained
 checker accepts the certificate:
 
-$$
+```math
 \mathsf{choice.check}(\mathit{slots},[],x,\mathit{steps})=\mathsf{true}.
-$$
+```
 
 The rule-aware checker rejects it:
 
-$$
+```math
 \mathsf{choice.check}(\mathit{slots},[C_R],x,\mathit{steps})=\mathsf{false}.
-$$
+```
 
 The input, words and spans all match; the only failing premise is
 `permitsRule(C_R,steps)`, because
 
-$$
+```math
 C_R.\mathit{leftDeleted}[2]=\mathsf{true}
 \quad\text{and}\quad
 C_R.\mathit{rightDeleted}[1]=\mathsf{true}.
-$$
+```
 
 If the legal ajuz path is supplied, the whole verse certificate still fails
 `verse::check` solely because the sadr half violates `R`. This is the intended
@@ -933,10 +962,10 @@ Consider a synthetic profile with two forms `0` and `1` and requirements
 group `[1]`, so the poem derivation fails at the end. A two-verse poem selecting
 forms `0` and `1` satisfies both groups, so it succeeds. This is exactly
 
-$$
+```math
 \forall g<2:\;\exists i<|\mathit{Req}[g]|:\;
 \mathit{Req}[g][i]\in\mathit{selected}.
-$$
+```
 
 Now suppose forms `0` and `1` are identical as forms but have different
 membership. Merging them would collapse the selected indices and could let one
